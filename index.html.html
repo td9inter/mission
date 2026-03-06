@@ -1,0 +1,789 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>길드전 오더 시스템 (라이트)</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&family=Orbitron:wght@400;700;900&display=swap');
+:root {
+  --bg:#efefef; --bg2:#ffffff; --bg3:#f5f5f5; --bg4:#e8e8e8;
+  --border:#d0d0d0; --border2:#e0e0e0;
+  --text:#1a1a2e; --text2:#555570; --text3:#9999b0;
+  --red:#d93025; --red-dim:#fde8e7;
+  --blue:#1a6ef5; --blue-dim:#e8f0fe;
+  --green:#1e8c45; --green-dim:#e6f4ea;
+  --gold:#b8860b; --gold-dim:#fef9e7;
+  --accent:#1a6ef5; --danger:#d93025; --success:#1e8c45; --warn:#e37400;
+  --pink:#9c27b0; --pink-dim:#f3e5f5;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:'Noto Sans KR',sans-serif;min-height:100vh;}
+body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(26,110,245,0.06) 1px,transparent 1px),linear-gradient(90deg,rgba(26,110,245,0.06) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0;}
+.wrap{position:relative;z-index:1;max-width:1200px;margin:0 auto;padding:16px;display:flex;flex-direction:column;gap:12px;}
+
+/* 공통 */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:5px;border:none;border-radius:6px;cursor:pointer;font-family:'Noto Sans KR',sans-serif;font-weight:700;transition:all 0.15s;}
+.btn-accent{background:var(--accent);color:#fff;font-size:13px;padding:10px 20px;}
+.btn-accent:hover{background:#79c0ff;}
+.btn-success{background:var(--success);color:#fff;font-size:12px;padding:8px 16px;}
+.btn-success:hover{filter:brightness(1.1);}
+.btn-ghost{background:transparent;color:var(--text2);border:1px solid var(--border);font-size:11px;padding:5px 12px;}
+.btn-ghost:hover{border-color:var(--text2);color:var(--text);}
+.btn-warn{background:rgba(210,153,34,0.15);color:var(--warn);border:1px solid rgba(210,153,34,0.3);font-size:11px;padding:5px 12px;}
+.inp{background:var(--bg4);border:1px solid var(--border);border-radius:5px;color:var(--text);font-family:'Noto Sans KR',sans-serif;font-size:12px;padding:7px 10px;outline:none;transition:border-color 0.2s;width:100%;}
+.inp:focus{border-color:var(--accent);}
+.inp::placeholder{color:var(--text3);}
+.card{background:var(--bg2);border:1px solid var(--border2);border-radius:8px;padding:16px;box-shadow:0 1px 4px rgba(0,0,0,0.08);}
+.sec-title{font-size:10px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:var(--text3);margin-bottom:10px;display:flex;align-items:center;gap:6px;}
+.sec-title::before{content:'';width:2px;height:10px;background:var(--accent);border-radius:2px;flex-shrink:0;}
+.divider{height:1px;background:var(--border2);margin:12px 0;}
+.no-data{font-size:11px;color:var(--text3);text-align:center;padding:12px 0;}
+
+/* 소진 현황 박스 */
+.spent-box{font-size:12px;}
+.spent-item{display:flex;align-items:center;justify-content:space-between;padding:4px 8px;background:var(--bg3);border:1px solid var(--border2);border-radius:4px;margin-bottom:4px;}
+.spent-name{font-weight:500;font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:80px;}
+.spent-pips{display:flex;gap:2px;align-items:center;flex-shrink:0;}
+.pip{width:11px;height:11px;border-radius:2px;border:1px solid var(--border);}
+.pip.on{background:var(--danger);border-color:var(--danger);}
+.pip.off{background:var(--bg4);}
+.spent-label{font-size:9px;color:var(--text3);margin-left:4px;}
+
+/* 드롭다운 */
+.dd-wrap{position:relative;}
+.dd-select{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:'Noto Sans KR',sans-serif;font-size:13px;padding:10px 14px;cursor:pointer;display:flex;align-items:center;justify-content:space-between;transition:border-color 0.2s;}
+.dd-select:hover{border-color:var(--accent);}
+.dd-select.open{border-color:var(--accent);}
+.dd-menu{position:absolute;top:calc(100%+4px);left:0;right:0;background:var(--bg3);border:1px solid var(--accent);border-radius:6px;z-index:100;max-height:240px;overflow-y:auto;box-shadow:0 8px 24px rgba(0,0,0,0.4);}
+.dd-item{padding:9px 14px;font-size:12px;cursor:pointer;display:flex;align-items:center;gap:10px;transition:background 0.1s;border-bottom:1px solid var(--border2);}
+.dd-item:last-child{border-bottom:none;}
+.dd-item:hover{background:var(--bg4);}
+.dd-item-name{flex:1;font-weight:500;}
+.dd-item-pow{font-family:'Orbitron',monospace;font-size:10px;color:var(--text2);}
+
+/* 속성 뱃지 */
+.abadge{font-size:11px;font-weight:700;padding:2px 7px;border-radius:20px;}
+.ab-red{background:var(--red-dim);color:var(--red);}
+.ab-blue{background:var(--blue-dim);color:var(--blue);}
+.ab-green{background:var(--green-dim);color:var(--green);}
+
+/* 오더 결과 */
+.order-result{background:linear-gradient(135deg,rgba(156,39,176,0.05),rgba(26,110,245,0.05));border:1px solid rgba(26,110,245,0.15);border-radius:8px;padding:16px;box-shadow:0 1px 4px rgba(0,0,0,0.08);}
+.order-label{font-size:10px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:var(--pink);margin-bottom:12px;}
+.order-options{display:flex;flex-direction:column;gap:8px;}
+.order-opt{background:var(--bg3);border:1px solid var(--border2);border-radius:6px;padding:12px 14px;display:flex;align-items:center;gap:10px;transition:border-color 0.2s;}
+.order-opt:hover{border-color:var(--border);}
+.order-opt.selected{border-color:var(--accent);background:rgba(88,166,255,0.08);}
+.order-opt-num{font-family:'Orbitron',monospace;font-size:11px;font-weight:700;color:var(--text3);width:24px;}
+.order-opt-name{flex:1;font-size:14px;font-weight:700;}
+.order-opt-power{font-family:'Orbitron',monospace;font-size:11px;color:var(--text2);}
+.order-opt-adv{font-size:11px;font-weight:700;padding:2px 8px;border-radius:4px;}
+.adv-win{background:rgba(63,185,80,0.15);color:var(--success);}
+.adv-draw{background:rgba(210,153,34,0.15);color:var(--warn);}
+.adv-lose{background:rgba(218,54,51,0.15);color:var(--danger);}
+.dummy-tag{background:var(--gold-dim);border:1px solid rgba(255,215,0,0.2);color:var(--gold);font-size:10px;font-weight:700;padding:2px 8px;border-radius:4px;font-family:'Orbitron',monospace;}
+.dummy-tag.ok{background:var(--green-dim);border-color:rgba(68,204,102,0.2);color:var(--green);}
+.select-radio{width:18px;height:18px;border-radius:50%;border:2px solid var(--border);background:var(--bg4);cursor:pointer;flex-shrink:0;transition:all 0.15s;display:flex;align-items:center;justify-content:center;}
+.select-radio.checked{border-color:var(--accent);background:var(--accent);}
+.select-radio.checked::after{content:'';width:6px;height:6px;border-radius:50%;background:#000;}
+
+/* 확정 영역 */
+.confirm-area{background:var(--bg3);border:1px solid var(--border2);border-radius:6px;padding:12px 14px;margin-top:10px;}
+.confirm-label{font-size:11px;color:var(--text2);margin-bottom:8px;}
+.confirm-row{display:flex;gap:8px;align-items:center;}
+
+/* 수성전 */
+.defense-area{background:rgba(30,140,69,0.04);border:1px solid rgba(30,140,69,0.2);border-radius:6px;padding:12px;}
+
+/* 레이아웃 그리드 */
+.row1{display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center;}
+.row2{display:grid;grid-template-columns:1fr 220px;gap:12px;align-items:start;}
+.row3{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+
+::-webkit-scrollbar{width:4px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<!-- ① 데이터 로드 -->
+<div class="card" style="padding:10px 16px;">
+  <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+    <span style="font-size:10px;font-weight:700;letter-spacing:2px;color:var(--text3);text-transform:uppercase;white-space:nowrap;">데이터 로드</span>
+    <label style="display:flex;align-items:center;gap:8px;background:var(--bg3);border:1px dashed var(--border);border-radius:6px;padding:6px 14px;cursor:pointer;position:relative;transition:all 0.2s;white-space:nowrap;" id="myUB" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="if(!this.classList.contains('ok'))this.style.borderColor='var(--border)'">
+      <input type="file" accept=".csv" style="position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;" onchange="loadCSV('my',this)">
+      <span style="font-size:16px;">🛡️</span>
+      <span style="font-size:12px;font-weight:700;">우리 길드</span>
+      <span id="myUSub" style="font-size:10px;color:var(--text3);">CSV 선택</span>
+    </label>
+    <label style="display:flex;align-items:center;gap:8px;background:var(--bg3);border:1px dashed var(--border);border-radius:6px;padding:6px 14px;cursor:pointer;position:relative;transition:all 0.2s;white-space:nowrap;" id="enUB" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="if(!this.classList.contains('ok'))this.style.borderColor='var(--border)'">
+      <input type="file" accept=".csv" style="position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;" onchange="loadCSV('enemy',this)">
+      <span style="font-size:16px;">⚔️</span>
+      <span style="font-size:12px;font-weight:700;">상대 길드</span>
+      <span id="enUSub" style="font-size:10px;color:var(--text3);">CSV 선택</span>
+    </label>
+    <span style="font-size:10px;color:var(--text3);margin-left:auto;">🔴불 ▶ 🟢풀 ▶ 🔵물 ▶ 🔴불 &nbsp;|&nbsp; 상성은 전력 차가 적을 때 유효</span>
+  </div>
+</div>
+
+<!-- ② 전체: 좌(출전자선택+추천오더) | 우(수성전+소진현황) -->
+<div style="display:grid;grid-template-columns:1fr 385px;gap:12px;align-items:start;">
+
+  <!-- 좌: 상대 출전자 선택 + 추천 오더 -->
+  <div style="display:flex;flex-direction:column;gap:10px;">
+
+    <div class="card" style="padding:12px 14px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+        <div class="sec-title" style="margin-bottom:0;">상대 출전자 선택</div>
+        <div style="display:flex;gap:6px;align-items:center;">
+          <span id="ddLabel" style="font-size:11px;color:var(--accent);font-weight:700;"></span>
+          <button class="btn btn-ghost" onclick="clearSelection()" style="font-size:10px;">초기화</button>
+        </div>
+      </div>
+      <div id="enemyBtnGrid" style="display:flex;flex-wrap:wrap;gap:5px;">
+        <div style="font-size:11px;color:var(--text3);padding:4px 0;">상대 길드 CSV를 로드하면 여기에 선택 버튼이 나타납니다</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div id="orderArea">
+        <div style="display:flex;align-items:center;justify-content:center;height:80px;color:var(--text3);font-size:12px;">상대 출전자를 선택하고 분석하세요</div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- 우: 수성전 + 소진현황 -->
+  <div style="display:flex;flex-direction:column;gap:10px;">
+
+    <!-- 수성전 강제출전: 우리/상대 나란히 -->
+    <div class="card" style="padding:12px 14px;">
+      <div class="sec-title" style="color:var(--success);margin-bottom:8px;">덱 소모 수동 체크</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+        <!-- 우리 길드 -->
+        <div class="defense-area" style="padding:8px 10px;">
+          <div style="font-size:10px;font-weight:700;color:var(--accent);margin-bottom:5px;">🛡️ 우리 길드</div>
+          <div style="position:relative;margin-bottom:5px;">
+            <input class="inp" id="defInpMy" placeholder="이름 검색..." oninput="srchDefMy(this.value)" autocomplete="off" style="font-size:11px;padding:5px 8px;">
+            <div id="defDDMy" style="display:none;position:absolute;top:calc(100%+4px);left:0;right:0;background:var(--bg3);border:1px solid var(--border);border-radius:5px;z-index:100;max-height:120px;overflow-y:auto;"></div>
+          </div>
+          <button class="btn btn-success" style="width:100%;font-size:10px;padding:5px;" onclick="applyDefenseMy()">✓ 적용</button>
+          <div style="margin-top:4px;font-size:10px;color:var(--text3);min-height:14px;" id="defAppliedMy"></div>
+        </div>
+        <!-- 상대 길드 -->
+        <div class="defense-area" style="padding:8px 10px;border-color:rgba(255,85,85,0.2);background:rgba(255,85,85,0.03);">
+          <div style="font-size:10px;font-weight:700;color:var(--red);margin-bottom:5px;">⚔️ 상대 길드</div>
+          <div style="position:relative;margin-bottom:5px;">
+            <input class="inp" id="defInpEn" placeholder="이름 검색..." oninput="srchDefEn(this.value)" autocomplete="off" style="font-size:11px;padding:5px 8px;">
+            <div id="defDDEn" style="display:none;position:absolute;top:calc(100%+4px);left:0;right:0;background:var(--bg3);border:1px solid var(--border);border-radius:5px;z-index:100;max-height:120px;overflow-y:auto;"></div>
+          </div>
+          <button class="btn" onclick="applyDefenseEn()" style="width:100%;font-size:10px;padding:5px;background:rgba(255,85,85,0.15);color:var(--red);border:1px solid rgba(255,85,85,0.3);border-radius:5px;font-weight:700;cursor:pointer;">✓ 적용</button>
+          <div style="margin-top:4px;font-size:10px;color:var(--text3);min-height:14px;" id="defAppliedEn"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 소진현황: 우리/상대 나란히 -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+      <div class="card" style="padding:10px 12px;">
+        <div class="sec-title" style="margin-bottom:6px;font-size:9px;">🛡️ 우리 소진</div>
+        <div id="mySpent"><div class="no-data">출전 확정 시 표시</div></div>
+      </div>
+      <div class="card" style="padding:10px 12px;">
+        <div class="sec-title" style="margin-bottom:6px;font-size:9px;">⚔️ 상대 소진</div>
+        <div id="enSpent"><div class="no-data">출전 확정 시 표시</div></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+</div><!-- /wrap -->
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getDatabase, ref, set, get, onValue, runTransaction } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyCIBF8ACLZ724INQXTtKdr1iV4nOW54Kqo",
+  authDomain: "inter-order.firebaseapp.com",
+  databaseURL: "https://inter-order-default-rtdb.firebaseio.com",
+  projectId: "inter-order",
+  storageBucket: "inter-order.firebasestorage.app",
+  messagingSenderId: "951121899834",
+  appId: "1:951121899834:web:338531706d7b5672fc2003"
+};
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+
+// ── Firebase 동기화 함수 ──
+function fbSet(path, value){ return set(ref(db, path), value); }
+
+function fbWatch(path, cb){
+  onValue(ref(db, path), snap => cb(snap.val()));
+}
+
+function fbTransaction(path, updateFn){
+  return runTransaction(ref(db, path), updateFn);
+}
+
+// ── 실시간 리스너 초기화 ──
+function initFirebaseListeners(){
+  // 우리 길드 데이터
+  fbWatch('myGuild', val => {
+    if(!val) return;
+    myGuild = val;
+    renderMySpent();
+    const ub=document.getElementById('myUB');
+    ub.style.borderStyle='solid'; ub.style.borderColor='var(--success)';
+    const name = myGuildName || '';
+    document.getElementById('myUSub').textContent = name ? `${name} (${myGuild.length}명)` : `✓ ${myGuild.length}명`;
+    document.getElementById('myUSub').style.color='var(--success)';
+  });
+  // 상대 길드 데이터
+  fbWatch('enemyGuild', val => {
+    if(!val) return;
+    enemyGuild = val;
+    buildEnemyGrid();
+    renderEnSpent();
+    const ub=document.getElementById('enUB');
+    ub.style.borderStyle='solid'; ub.style.borderColor='var(--success)';
+    const name = enemyGuildName || '';
+    document.getElementById('enUSub').textContent = name ? `${name} (${enemyGuild.length}명)` : `✓ ${enemyGuild.length}명`;
+    document.getElementById('enUSub').style.color='var(--success)';
+  });
+  // 길드 이름
+  fbWatch('myGuildName', val => { if(val){ myGuildName=val; } });
+  fbWatch('enemyGuildName', val => { if(val){ enemyGuildName=val; } });
+  // 우리 소진 현황
+  fbWatch('mySpentMap', val => {
+    mySpentMap = val || {};
+    renderMySpent();
+    if(lastOrders.length) renderOrderResult();
+  });
+  // 상대 소진 현황
+  fbWatch('enSpentMap', val => {
+    enSpentMap = val || {};
+    renderEnSpent();
+    buildEnemyGrid();
+  });
+  // 선택된 상대
+  fbWatch('selectedEnemy', val => {
+    selectedEnemy = val || null;
+    if(selectedEnemy){
+      const attrIcon={red:'🔴',blue:'🔵',green:'🟢'};
+      document.getElementById('ddLabel').textContent=`선택: ${selectedEnemy.name}`;
+      document.getElementById('ddLabel').style.color='var(--accent)';
+      analyze();
+    } else {
+      document.getElementById('ddLabel').textContent='';
+      document.getElementById('orderArea').innerHTML='<div style="display:flex;align-items:center;justify-content:center;height:80px;color:var(--text3);font-size:12px;">상대 출전자를 선택하고 분석하세요</div>';
+    }
+    buildEnemyGrid();
+  });
+}
+
+let myGuild=[], enemyGuild=[];
+let myGuildName='', enemyGuildName='';
+// spentMap: name → count (0,1,2)
+let mySpentMap={}, enSpentMap={};
+let selectedEnemy=null;
+let selectedOrderIdx=null;
+let lastOrders=[];
+let pendingCustom='';
+let defPending=null;
+
+// ── CSV ──
+function loadCSV(type,input){
+  const file=input.files[0]; if(!file)return;
+  const r=new FileReader();
+  r.onload=e=>{
+    const {list,guildName}=parseCSV(e.target.result);
+    if(type==='my'){
+      myGuildName=guildName;
+      fbSet('myGuild', list);
+      fbSet('myGuildName', guildName);
+      fbSet('mySpentMap', {});
+    } else {
+      enemyGuildName=guildName;
+      fbSet('enemyGuild', list);
+      fbSet('enemyGuildName', guildName);
+      fbSet('enSpentMap', {});
+    }
+  };
+  r.readAsText(file,'utf-8');
+}
+
+function parseCSV(text){
+  const lines=text.trim().split('\n').filter(l=>l.trim());
+  if(!lines.length)return{list:[],guildName:''};
+  const delim=lines[0].includes('\t')?'\t':',';
+  // C1 (index 2) 에서 길드 이름 추출
+  const firstCols=lines[0].split(delim).map(c=>c.trim().replace(/"/g,''));
+  const guildName=firstCols[2]||'';
+  const res=[];
+  for(let i=0;i<lines.length;i++){
+    const cols=lines[i].split(delim).map(c=>c.trim().replace(/"/g,''));
+    const nameVal=(cols[2]||'').trim();
+    if(!nameVal)continue;
+    const up=nameVal.toUpperCase();
+    // 스킵: 체크박스값, 헤더, 길드명 셀, 날짜/숫자만 있는 행
+    if(up==='FALSE'||up==='TRUE'||up==='유저'||nameVal.startsWith('<')||nameVal.startsWith('20'))continue;
+    // 이름이 한글/영문/숫자 조합인지 확인 (순수 숫자면 스킵)
+    if(/^\d+$/.test(nameVal))continue;
+    const bandPower=parsePow(cols[3]);
+    const mainPower=parsePow(cols[6]);
+    const subPower=parsePow(cols[10]);
+    const attr=parseAttr(cols[5]||'');
+    // bandPower나 mainPower 중 하나라도 있으면 포함
+    if(!bandPower&&!mainPower)continue;
+    const effPower=mainPower+subPower*0.35;
+    res.push({name:nameVal,bandPower,mainPower,subPower,effPower,attr});
+  }
+  return{list:res.sort((a,b)=>b.effPower-a.effPower),guildName};
+}
+
+function parsePow(s){
+  return parseFloat((s||'0').replace(/만/g,'').replace(/,/g,'').trim())||0;
+}
+
+function parseAttr(s){
+  const v=(s||'').trim();
+  if(v==='화')return'red';
+  if(v==='수')return'blue';
+  if(v==='목')return'green';
+  // 혹시 이모지나 영문으로 들어올 경우 대비
+  if(v.includes('🔴')||v.toLowerCase().includes('red'))return'red';
+  if(v.includes('🔵')||v.toLowerCase().includes('blue'))return'blue';
+  if(v.includes('🟢')||v.toLowerCase().includes('green'))return'green';
+  return'red';
+}
+function fi(hdrs,cands){for(const c of cands){const i=hdrs.findIndex(h=>h.includes(c));if(i>=0)return i;}return 0;}
+function splitLine(line){const res=[];let cur='',inQ=false;for(const ch of line){if(ch==='"')inQ=!inQ;else if(ch===','&&!inQ){res.push(cur);cur='';}else cur+=ch;}res.push(cur);return res;}
+
+// ── 상대 출전자 버튼 그리드 ──
+function buildEnemyGrid(){
+  const grid=document.getElementById('enemyBtnGrid');
+  if(!enemyGuild.length){
+    grid.innerHTML='<div style="font-size:11px;color:var(--text3);padding:8px 0;">상대 길드 CSV를 로드하면 여기에 선택 버튼이 나타납니다</div>';
+    return;
+  }
+  const attrIcon={red:'🔴',blue:'🔵',green:'🟢'};
+  grid.innerHTML=enemyGuild.map(m=>{
+    const cnt=enSpentMap[m.name]||0;
+    const spent=cnt>=2;
+    const once=cnt===1;
+    const isSelected=selectedEnemy&&selectedEnemy.name===m.name;
+    const subIcon=m.subPower>0?attrIcon[m.attr]:'';
+    let bg=isSelected?'rgba(88,166,255,0.2)':'var(--bg3)';
+    let border=isSelected?'var(--accent)':spent?'var(--danger)':once?'var(--warn)':'var(--border2)';
+    let opacity=spent?'0.4':'1';
+    let textColor=spent?'var(--text3)':'var(--text)';
+    const dispName = m.name.length > 5 ? m.name.slice(0,5)+'...' : m.name;
+    return `<button onclick="selectEnemy('${m.name}')"
+      style="width:130px;height:28px;background:${bg};border:1px solid ${border};border-radius:5px;
+      color:${textColor};font-family:'Noto Sans KR',sans-serif;font-size:11px;font-weight:500;
+      cursor:${spent?'not-allowed':'pointer'};opacity:${opacity};
+      display:flex;align-items:center;justify-content:center;gap:3px;padding:0 6px;
+      white-space:nowrap;overflow:hidden;transition:all 0.1s;"
+      ${spent?'disabled':''}>
+      <span>${attrIcon[m.attr]}</span>
+      ${subIcon?`<span style="font-size:9px;">${subIcon}</span>`:''}
+      <span>${dispName}</span>
+      ${once?'<span style="font-size:9px;color:var(--warn);margin-left:2px;">1회</span>':''}
+    </button>`;
+  }).join('');
+}
+
+function selectEnemy(name){
+  const m=enemyGuild.find(x=>x.name===name);
+  if(!m||(enSpentMap[m.name]||0)>=2)return;
+  fbSet('selectedEnemy', m);
+}
+
+
+document.addEventListener('click',e=>{
+  if(!e.target.closest('#defInpMy')&&!e.target.closest('#defDDMy'))document.getElementById('defDDMy').style.display='none';
+  if(!e.target.closest('#defInpEn')&&!e.target.closest('#defDDEn'))document.getElementById('defDDEn').style.display='none';
+});
+
+function clearSelection(){
+  fbSet('selectedEnemy', null);
+  selectedOrderIdx=null; lastOrders=[];
+}
+
+// ── 분석 ──
+function adv(mine,theirs){
+  const wins={red:'green',green:'blue',blue:'red'};
+  const loses={red:'blue',green:'red',blue:'green'};
+  if(wins[mine]===theirs)return 1;
+  if(loses[mine]===theirs)return -1;
+  return 0;
+}
+
+function analyze(){
+  const ra=document.getElementById('orderArea');
+  if(!myGuild.length){ra.innerHTML='<div style="color:var(--text3);font-size:12px;padding:20px;text-align:center;">우리 길드 CSV를 먼저 불러오세요</div>';return;}
+  if(!selectedEnemy){ra.innerHTML='<div style="color:var(--text3);font-size:12px;padding:20px;text-align:center;">상대 출전자를 선택하세요</div>';return;}
+
+  const ep=selectedEnemy.effPower;
+  const eAttr=selectedEnemy.attr;
+
+  // 소진 2회 미만 가용 멤버
+  const avail=myGuild.filter(m=>(mySpentMap[m.name]||0)<2);
+
+  // 상성 반영 실효전력으로 정렬
+  const scored=avail.map(m=>{
+    const a=adv(m.attr,eAttr);
+    const eff=m.effPower*(1+a*0.15);
+    const ratio=eff/(ep||1);
+    return{...m,eff,ratio,advVal:a};
+  }).sort((a,b)=>{
+    // 이길 수 있는 사람(eff >= 85%) 중에서 가장 낮은 전력 우선 (자원 아끼기)
+    const aOk=a.eff>=ep*0.85, bOk=b.eff>=ep*0.85;
+    if(aOk&&!bOk)return -1; if(!aOk&&bOk)return 1;
+    if(aOk&&bOk)return a.effPower-b.effPower;
+    return b.eff-a.eff;
+  });
+
+  // 상위 6~8명 (가용 인원 적으면 전부)
+  const topN=scored.slice(0,Math.min(8,scored.length));
+  lastOrders=topN.map(m=>({member:m,dummy:calcDummy(ep,m.effPower)}));
+  selectedOrderIdx=null;
+  renderOrderResult();
+}
+
+function calcDummy(ep,mp){
+  if(!ep||ep*0.9<=mp)return null;  // 상대*0.9 이미 우리보다 낮으면 더미 불필요
+  const weaken=1-(mp/(ep*0.9));    // 상대를 우리의 90% 수준으로 약화
+  const needed=Math.ceil(weaken*450);
+  if(needed>450)return{impossible:true};
+  const n50=Math.min(Math.ceil(weaken/0.5*250),250);
+  return{impossible:false,needed,bands:Math.ceil(needed/6),weaken,n50,b50:Math.ceil(n50/6)};
+}
+
+function renderOrderResult(){
+  if(!lastOrders.length)return;
+  const attrIcon={red:'🔴',blue:'🔵',green:'🟢'};
+  const attrCls={red:'ab-red',blue:'ab-blue',green:'ab-green'};
+
+  let rowsHtml='';
+  lastOrders.forEach((o,i)=>{
+    const m=o.member, d=o.dummy;
+    const cnt=mySpentMap[m.name]||0;
+    let advCls='adv-draw',advTxt='비슷';
+    if(m.ratio>=1.1){advCls='adv-win';advTxt='우위';}
+    else if(m.ratio<0.85){advCls='adv-lose';advTxt='열세';}
+    const advMark=m.advVal===1?'▲':m.advVal===-1?'▼':'';
+    const advColor=m.advVal===1?'var(--success)':m.advVal===-1?'var(--danger)':'var(--text3)';
+    let dummyTxt='';
+    if(!d) dummyTxt=`<span style="color:var(--success);font-weight:700;font-size:11px;">불필요</span>`;
+    else if(d.impossible) dummyTxt=`<span style="color:var(--danger);font-size:11px;">⚠️불가</span>`;
+    else dummyTxt=`<span style="color:var(--gold);font-size:12px;font-weight:700;line-height:1.5;">~${d.needed}명<br><span style="color:var(--text3);">(~${d.bands}반)</span></span>`;
+    const cntBadge=cnt===1?`<span style="font-size:9px;color:var(--warn);margin-left:3px;">1회</span>`:'';
+    const sel=selectedOrderIdx===i;
+    const rowBg=sel?'rgba(88,166,255,0.08)':'transparent';
+    rowsHtml+=`
+      <tr onclick="selectOrder(${i})" style="cursor:pointer;background:${rowBg};"
+        onmouseover="if(${!sel})this.style.background='var(--bg3)'" onmouseout="this.style.background='${rowBg}'">
+        <td style="padding:7px 8px;text-align:center;">
+          <div style="width:15px;height:15px;border-radius:50%;border:2px solid ${sel?'var(--accent)':'var(--border)'};background:${sel?'var(--accent)':'transparent'};margin:auto;display:flex;align-items:center;justify-content:center;">
+            ${sel?'<div style="width:5px;height:5px;border-radius:50%;background:#000;"></div>':''}
+          </div>
+        </td>
+        <td style="padding:7px 6px;font-family:'Orbitron',monospace;font-size:9px;color:var(--text3);">${i+1}</td>
+        <td style="padding:7px 6px;"><span class="abadge ${attrCls[m.attr]}">${attrIcon[m.attr]}</span></td>
+        <td style="padding:7px 8px;font-size:13px;font-weight:500;">${m.name}${cntBadge}</td>
+        <td style="padding:7px 8px;font-family:'Orbitron',monospace;font-size:10px;color:var(--text2);white-space:nowrap;">
+          ${m.mainPower.toFixed(1)}만 ${advMark?`<span style="color:${advColor};font-size:9px;">${advMark}</span>`:''}
+        </td>
+        <td style="padding:7px 8px;"><span class="order-opt-adv ${advCls}">${advTxt}</span></td>
+        <td style="padding:7px 8px;text-align:right;line-height:1.4;">${dummyTxt}</td>
+      </tr>`;
+  });
+
+  const selOrder=selectedOrderIdx!==null?lastOrders[selectedOrderIdx]:null;
+  let dummyDetail='';
+  if(selOrder?.dummy&&!selOrder.dummy.impossible){
+    const d=selOrder.dummy;
+    dummyDetail=`<div style="background:rgba(255,215,0,0.05);border:1px solid rgba(255,215,0,0.15);border-radius:5px;padding:8px 12px;margin-top:10px;font-size:11px;display:flex;gap:14px;flex-wrap:wrap;align-items:center;">
+      <span style="color:var(--gold);font-weight:700;">💀 더미 계산</span>
+      <span style="color:var(--text2);">약화 <strong style="color:var(--gold);">${Math.round(d.weaken*100)}%</strong> 필요</span>
+      <span style="color:var(--text2);">50%약화 → <strong style="color:var(--gold);">${d.n50}명 (~${d.b50}반)</strong></span>
+      <span style="color:var(--text2);">완전약화 → <strong style="color:var(--gold);">${d.needed}명 (~${d.bands}반)</strong></span>
+    </div>`;
+  }
+
+  document.getElementById('orderArea').innerHTML=`
+    <div class="order-result">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+        <div class="order-label" style="margin-bottom:0;">추천 오더 — 메인투력 상위 ${lastOrders.length}명</div>
+        <div style="font-size:10px;color:var(--text3);">클릭 선택 후 출전 확정</div>
+      </div>
+      <div style="overflow-x:auto;">
+        <table style="width:100%;border-collapse:collapse;">
+          <thead>
+            <tr style="border-bottom:1px solid var(--border2);">
+              <th style="padding:5px 8px;width:28px;"></th>
+              <th style="padding:5px 6px;font-size:9px;color:var(--text3);font-weight:700;text-align:left;">#</th>
+              <th style="padding:5px 6px;font-size:9px;color:var(--text3);font-weight:700;"></th>
+              <th style="padding:5px 8px;font-size:9px;color:var(--text3);font-weight:700;text-align:left;">이름</th>
+              <th style="padding:5px 8px;font-size:9px;color:var(--text3);font-weight:700;text-align:left;">메인투력</th>
+              <th style="padding:5px 8px;font-size:9px;color:var(--text3);font-weight:700;text-align:left;">비교우위</th>
+              <th style="padding:5px 8px;font-size:9px;color:var(--text3);font-weight:700;text-align:right;">더미</th>
+            </tr>
+          </thead>
+          <tbody>${rowsHtml}</tbody>
+        </table>
+      </div>
+      ${dummyDetail}
+      <div style="display:flex;gap:6px;align-items:center;margin-top:10px;">
+        <input class="inp" id="confirmInp" placeholder="출전 멤버" style="flex:1;" oninput="pendingCustom=this.value">
+        <button class="btn btn-success" onclick="confirmDeploy()" style="white-space:nowrap;padding:8px 14px;font-size:12px;">✓ 출전 확정</button>
+      </div>
+    </div>`;
+}
+
+function selectOrder(idx){
+  selectedOrderIdx=idx;
+  const m=lastOrders[idx]?.member;
+  if(m){
+    const inp=document.getElementById('confirmInp');
+    if(inp)inp.value=m.name;
+    pendingCustom=m.name;
+  }
+  renderOrderResult();
+}
+
+// ── 출전 확정 ──
+function confirmDeploy(){
+  if(!selectedEnemy){alert('상대 출전자가 선택되지 않았습니다.');return;}
+  const inp=document.getElementById('confirmInp');
+  const usedName=(inp?.value||pendingCustom||'').trim();
+  if(!usedName){alert('출전할 멤버 이름을 입력하거나 추천 안을 선택하세요.');return;}
+
+  // 우리팀 소진
+  mySpentMap[usedName]=(mySpentMap[usedName]||0)+1;
+  // 상대팀 소진
+  enSpentMap[selectedEnemy.name]=(enSpentMap[selectedEnemy.name]||0)+1;
+
+  renderMySpent();
+  renderEnSpent();
+  buildEnemyGrid(); // 드롭다운 소진 표시 갱신
+
+  // 초기화
+  clearSelection();
+}
+
+// ── 소진 현황 렌더 ──
+function pips(cnt){
+  return `<div class="spent-pips">
+    <div class="pip ${cnt>=1?'on':'off'}"></div>
+    <div class="pip ${cnt>=2?'on':'off'}"></div>
+    <span class="spent-label">${cnt>=2?'소진':cnt===1?'1회':'대기'}</span>
+  </div>`;
+}
+
+function renderMySpent(){
+  const el=document.getElementById('mySpent');
+  const entries=Object.entries(mySpentMap).filter(([,c])=>c>0);
+  if(!entries.length){el.innerHTML='<div class="no-data">출전 확정 시 표시</div>';return;}
+  el.innerHTML=entries.map(([name,cnt])=>{
+    const m=myGuild.find(x=>x.name===name);
+    const ic=m?({red:'🔴',blue:'🔵',green:'🟢'}[m.attr]||''):'';
+    return `<div class="spent-item">
+      <span class="spent-name">${ic} ${name}</span>
+      <div style="display:flex;align-items:center;gap:8px;">
+        ${pips(cnt)}
+        <button class="btn btn-ghost" style="padding:2px 7px;font-size:10px;" onclick="resetMySpent('${name}')">↩</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderEnSpent(){
+  const el=document.getElementById('enSpent');
+  const entries=Object.entries(enSpentMap).filter(([,c])=>c>0);
+  if(!entries.length){el.innerHTML='<div class="no-data">상대 출전 확정 시 표시</div>';return;}
+  el.innerHTML=entries.map(([name,cnt])=>{
+    const m=enemyGuild.find(x=>x.name===name);
+    const ic=m?({red:'🔴',blue:'🔵',green:'🟢'}[m.attr]||''):'';
+    return `<div class="spent-item">
+      <span class="spent-name">${ic} ${name}</span>
+      <div style="display:flex;align-items:center;gap:8px;">
+        ${pips(cnt)}
+        <button class="btn btn-ghost" style="padding:2px 7px;font-size:10px;" onclick="resetEnSpent('${name}')">↩</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function resetMySpent(name){
+  fbTransaction(`mySpentMap/${name}`, cur => Math.max((cur||0)-1, 0));
+}
+function resetEnSpent(name){
+  fbTransaction(`enSpentMap/${name}`, cur => Math.max((cur||0)-1, 0));
+}
+
+// ── 수성전 ──
+function srchDefMy(val){
+  const dd=document.getElementById('defDDMy');
+  if(!val.trim()||!myGuild.length){dd.style.display='none';return;}
+  const hits=myGuild.filter(m=>m.name.includes(val)).slice(0,6);
+  if(!hits.length){dd.style.display='none';return;}
+  const attrIcon={red:'🔴',blue:'🔵',green:'🟢'};
+  dd.innerHTML=hits.map(m=>`<div style="padding:7px 10px;font-size:12px;cursor:pointer;" onmouseover="this.style.background='var(--bg4)'" onmouseout="this.style.background=''" onclick="pickDefMy('${m.name}')">${attrIcon[m.attr]} ${m.name} <span style="color:var(--text3);font-size:10px;">${m.mainPower?m.mainPower.toFixed(1)+'만':''}</span></div>`).join('');
+  dd.style.display='block';
+}
+function pickDefMy(name){
+  document.getElementById('defInpMy').value=name;
+  document.getElementById('defDDMy').style.display='none';
+}
+function applyDefenseMy(){
+  const name=(document.getElementById('defInpMy').value||'').trim();
+  if(!name){alert('이름을 입력하세요.');return;}
+  fbTransaction(`mySpentMap/${name}`, cur => Math.min((cur||0)+1, 2));
+  document.getElementById('defInpMy').value='';
+  const el=document.getElementById('defAppliedMy');
+  el.textContent=`✓ ${name} 처리됨`; el.style.color='var(--success)';
+  setTimeout(()=>{el.textContent='';},3000);
+}
+
+function srchDefEn(val){
+  const dd=document.getElementById('defDDEn');
+  if(!val.trim()||!enemyGuild.length){dd.style.display='none';return;}
+  const hits=enemyGuild.filter(m=>m.name.includes(val)).slice(0,6);
+  if(!hits.length){dd.style.display='none';return;}
+  const attrIcon={red:'🔴',blue:'🔵',green:'🟢'};
+  dd.innerHTML=hits.map(m=>`<div style="padding:7px 10px;font-size:12px;cursor:pointer;" onmouseover="this.style.background='var(--bg4)'" onmouseout="this.style.background=''" onclick="pickDefEn('${m.name}')">${attrIcon[m.attr]} ${m.name} <span style="color:var(--text3);font-size:10px;">${m.mainPower?m.mainPower.toFixed(1)+'만':''}</span></div>`).join('');
+  dd.style.display='block';
+}
+function pickDefEn(name){
+  document.getElementById('defInpEn').value=name;
+  document.getElementById('defDDEn').style.display='none';
+}
+function applyDefenseEn(){
+  const name=(document.getElementById('defInpEn').value||'').trim();
+  if(!name){alert('이름을 입력하세요.');return;}
+  fbTransaction(`enSpentMap/${name}`, cur => Math.min((cur||0)+1, 2));
+  document.getElementById('defInpEn').value='';
+  const el=document.getElementById('defAppliedEn');
+  el.textContent=`✓ ${name} 처리됨`; el.style.color='var(--red)';
+  setTimeout(()=>{el.textContent='';},3000);
+}
+
+
+// ── 소진 현황 렌더 ──
+function pips(cnt){
+  return `<div class="spent-pips">
+    <div class="pip ${cnt>=1?'on':'off'}"></div>
+    <div class="pip ${cnt>=2?'on':'off'}"></div>
+    <span class="spent-label">${cnt>=2?'소진':cnt===1?'1회':'대기'}</span>
+  </div>`;
+}
+
+function renderMySpent(){
+  const el=document.getElementById('mySpent');
+  const entries=Object.entries(mySpentMap).filter(([,c])=>c>0);
+  if(!entries.length){el.innerHTML='<div class="no-data">출전 확정 시 표시</div>';return;}
+  el.innerHTML=entries.map(([name,cnt])=>{
+    const m=myGuild.find(x=>x.name===name);
+    const ic=m?({red:'🔴',blue:'🔵',green:'🟢'}[m.attr]||''):'';
+    return `<div class="spent-item">
+      <span class="spent-name">${ic} ${name}</span>
+      <div style="display:flex;align-items:center;gap:8px;">
+        ${pips(cnt)}
+        <button class="btn btn-ghost" style="padding:2px 7px;font-size:10px;" onclick="resetMySpent('${name}')">↩</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderEnSpent(){
+  const el=document.getElementById('enSpent');
+  const entries=Object.entries(enSpentMap).filter(([,c])=>c>0);
+  if(!entries.length){el.innerHTML='<div class="no-data">상대 출전 확정 시 표시</div>';return;}
+  el.innerHTML=entries.map(([name,cnt])=>{
+    const m=enemyGuild.find(x=>x.name===name);
+    const ic=m?({red:'🔴',blue:'🔵',green:'🟢'}[m.attr]||''):'';
+    return `<div class="spent-item">
+      <span class="spent-name">${ic} ${name}</span>
+      <div style="display:flex;align-items:center;gap:8px;">
+        ${pips(cnt)}
+        <button class="btn btn-ghost" style="padding:2px 7px;font-size:10px;" onclick="resetEnSpent('${name}')">↩</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+
+
+// ── 수성전 ──
+let defTab='my'; // 'my' | 'en'
+
+
+function srchDef(val){
+  const dd=document.getElementById('defDD');
+  if(!val.trim()){dd.style.display='none';return;}
+  const pool=defTab==='my'?myGuild:enemyGuild;
+  if(!pool.length){dd.style.display='none';return;}
+  const hits=pool.filter(m=>m.name.includes(val)).slice(0,6);
+  if(!hits.length){dd.style.display='none';return;}
+  const attrIcon={red:'🔴',blue:'🔵',green:'🟢'};
+  dd.innerHTML=hits.map(m=>`<div style="padding:7px 10px;font-size:12px;cursor:pointer;" onmouseover="this.style.background='var(--bg4)'" onmouseout="this.style.background=''" onclick="pickDef('${m.name}')">${attrIcon[m.attr]||''} ${m.name} <span style="color:var(--text3);font-size:10px;">${m.mainPower?m.mainPower.toFixed(1)+'만':''}</span></div>`).join('');
+  dd.style.display='block';
+}
+
+function pickDef(name){
+  defPending=name;
+  document.getElementById('defInp').value=name;
+  document.getElementById('defDD').style.display='none';
+}
+
+function applyDefense(){
+  const name=(defPending||document.getElementById('defInp').value||'').trim();
+  if(!name){alert('이름을 입력하세요.');return;}
+  if(defTab==='my'){
+    mySpentMap[name]=Math.min((mySpentMap[name]||0)+1,2);
+    renderMySpent();
+    const cnt=mySpentMap[name];
+    showDefMsg(`✓ [우리] ${name} ${cnt>=2?'소진':'1회 출전'} 처리됨`);
+  } else {
+    enSpentMap[name]=Math.min((enSpentMap[name]||0)+1,2);
+    renderEnSpent();
+    buildEnemyGrid();
+    const cnt=enSpentMap[name];
+    showDefMsg(`✓ [상대] ${name} ${cnt>=2?'소진':'1회 출전'} 처리됨`);
+  }
+  defPending=null;
+  document.getElementById('defInp').value='';
+}
+
+function showDefMsg(msg){
+  const el=document.getElementById('defApplied');
+  if(el){el.textContent=msg; el.style.color='var(--success)'; setTimeout(()=>{el.textContent='';},3000);}
+}
+
+// 시작!
+initFirebaseListeners();
+
+// module 스코프 → window 노출 (HTML onclick 핸들러용)
+window.loadCSV = loadCSV;
+window.selectEnemy = selectEnemy;
+window.clearSelection = clearSelection;
+window.selectOrder = selectOrder;
+window.confirmDeploy = confirmDeploy;
+window.resetMySpent = resetMySpent;
+window.resetEnSpent = resetEnSpent;
+window.srchDefMy = srchDefMy;
+window.srchDefEn = srchDefEn;
+window.pickDefMy = pickDefMy;
+window.pickDefEn = pickDefEn;
+window.applyDefenseMy = applyDefenseMy;
+window.applyDefenseEn = applyDefenseEn;
+</script>
+</body>
+</html>
