@@ -459,9 +459,9 @@ function analyze(){
 function calcDummy(ep,mp){
   if(!ep||ep*0.9<=mp)return null;  // 상대*0.9 이미 우리보다 낮으면 더미 불필요
   const weaken=1-(mp/(ep*0.9));    // 상대를 우리의 90% 수준으로 약화
-  const needed=Math.ceil(weaken*450);
-  if(needed>450)return{impossible:true};
-  const n50=Math.min(Math.ceil(weaken/0.5*250),250);
+  const needed=Math.ceil(weaken*480);
+  if(needed>480)return{impossible:true};
+  const n50=Math.min(Math.ceil(weaken/0.5*240),240);
   return{impossible:false,needed,bands:Math.ceil(needed/6),weaken,n50,b50:Math.ceil(n50/6)};
 }
 
@@ -512,8 +512,7 @@ function renderOrderResult(){
     dummyDetail=`<div style="background:rgba(255,215,0,0.05);border:1px solid rgba(255,215,0,0.15);border-radius:5px;padding:8px 12px;margin-top:10px;font-size:11px;display:flex;gap:14px;flex-wrap:wrap;align-items:center;">
       <span style="color:var(--gold);font-weight:700;">💀 더미 계산</span>
       <span style="color:var(--text2);">약화 <strong style="color:var(--gold);">${Math.round(d.weaken*100)}%</strong> 필요</span>
-      <span style="color:var(--text2);">50%약화 → <strong style="color:var(--gold);">${d.n50}명 (~${d.b50}반)</strong></span>
-      <span style="color:var(--text2);">완전약화 → <strong style="color:var(--gold);">${d.needed}명 (~${d.bands}반)</strong></span>
+      <span style="color:var(--text2);">더미 <strong style="color:var(--gold);">${d.needed}명 (~${d.bands}반)</strong></span>
     </div>`;
   }
 
