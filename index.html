@@ -275,7 +275,7 @@ function initFirebaseListeners(){
     selectedEnemy = val || null;
     if(selectedEnemy){
       const attrIcon={red:'🔴',blue:'🔵',green:'🟢'};
-      document.getElementById('ddLabel').textContent=`선택: ${selectedEnemy.name}`;
+      document.getElementById('ddLabel').innerHTML=`선택: ${selectedEnemy.name} &nbsp;${attrIcon[selectedEnemy.attr]} &nbsp;<span style="font-family:'Orbitron',monospace;font-size:10px;">메인 ${selectedEnemy.mainPower.toFixed(1)}만 &nbsp;서브 ${selectedEnemy.subPower.toFixed(1)}만</span>`;
       document.getElementById('ddLabel').style.color='var(--accent)';
       analyze();
     } else {
