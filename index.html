@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>길드전 오더 시스템 (ver-1.0)</title>
+<title>길드전 오더 시스템 (라이트)</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&display=swap');
 :root {
@@ -519,14 +519,16 @@ function analyze(){
 
   // 상위 6~8명 (가용 인원 적으면 전부)
   const topN=scored.slice(0,Math.min(8,scored.length));
-  lastOrders=topN.map(m=>({member:m,dummy:calcDummy(ep,m.effPower)}));
+  lastOrders=topN.map(m=>({member:m,dummy:calcDummy(ep,m.effPower,m.advVal)}));
   selectedOrderIdx=null;
   renderOrderResult();
 }
 
-function calcDummy(ep,mp){
-  if(!ep||ep*0.9<=mp)return null;  // 상대*0.9 이미 우리보다 낮으면 더미 불필요
-  const weaken=1-(mp/(ep*0.9));    // 상대를 우리의 90% 수준으로 약화
+function calcDummy(ep,mp,advVal){
+  // 상성 반영 기준배율: 우위 0.95 / 동일 0.85 / 약세 0.70
+  const base = advVal===1 ? 0.95 : advVal===-1 ? 0.70 : 0.85;
+  if(!ep||ep*base<=mp)return null;  // 이미 기준 이하면 더미 불필요
+  const weaken=1-(mp/(ep*base));    // 상대를 기준배율 수준으로 약화
   const needed=Math.ceil(weaken*480);
   if(needed>480)return{impossible:true};
   const n50=Math.min(Math.ceil(weaken/0.5*240),240);
