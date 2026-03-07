@@ -545,7 +545,7 @@ function buildEnemyGrid(){
       <span>${attrIcon[m.attr]}</span>
       ${subIcon?`<span style="font-size:9px;">${subIcon}</span>`:''}
       <span>${dispName}</span>
-      ${once?`<span style="font-size:9px;color:${isMain?'var(--warn)':'rgba(255,255,255,0.6)'};margin-left:2px;">1회</span>`:''}
+      ${once?`<span style="font-size:9px;color:var(--warn);margin-left:2px;">1회</span>`:''}
     </button>`;
   }).join('');
 }
