@@ -923,6 +923,9 @@ function pickDefMy(name){
 function applyDefenseMy(){
   const name=(document.getElementById('defInpMy').value||'').trim();
   if(!name){alert('이름을 입력하세요.');return;}
+  if(myGuild.length && !myGuild.find(x=>x.name===name)){
+    alert(`"${name}" 은(는) 우리 길드 멤버가 아닙니다.`);return;
+  }
   setSpent('mySpentMap', name, Math.min(spentCount(mySpentMap,name)+1, 2));
   document.getElementById('defInpMy').value='';
   const el=document.getElementById('defAppliedMy');
@@ -946,6 +949,9 @@ function pickDefEn(name){
 function applyDefenseEn(){
   const name=(document.getElementById('defInpEn').value||'').trim();
   if(!name){alert('이름을 입력하세요.');return;}
+  if(enemyGuild.length && !enemyGuild.find(x=>x.name===name)){
+    alert(`"${name}" 은(는) 상대 길드 멤버가 아닙니다.`);return;
+  }
   setSpent('enSpentMap', name, Math.min(spentCount(enSpentMap,name)+1, 2));
   document.getElementById('defInpEn').value='';
   const el=document.getElementById('defAppliedEn');
