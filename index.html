@@ -414,6 +414,7 @@ function selectEnemy(name){
 document.addEventListener('click',e=>{
   if(!e.target.closest('#defInpMy')&&!e.target.closest('#defDDMy'))document.getElementById('defDDMy').style.display='none';
   if(!e.target.closest('#defInpEn')&&!e.target.closest('#defDDEn'))document.getElementById('defDDEn').style.display='none';
+  const cdd=document.getElementById('confirmDD'); if(cdd&&!e.target.closest('#confirmInp')&&!e.target.closest('#confirmDD'))cdd.style.display='none';
 });
 
 function clearSelection(){
@@ -545,11 +546,34 @@ function renderOrderResult(){
         </table>
       </div>
       ${dummyDetail}
-      <div style="display:flex;gap:6px;align-items:center;margin-top:10px;">
-        <input class="inp" id="confirmInp" placeholder="출전 멤버" style="flex:1;" oninput="pendingCustom=this.value">
+      <div style="display:flex;gap:6px;align-items:center;margin-top:10px;position:relative;">
+        <div style="flex:1;position:relative;">
+          <input class="inp" id="confirmInp" placeholder="출전 멤버 이름 검색..." style="width:100%;" oninput="srchConfirm(this.value)" autocomplete="off">
+          <div id="confirmDD" style="display:none;position:absolute;top:calc(100%+4px);left:0;right:0;background:var(--bg3);border:1px solid var(--accent);border-radius:5px;z-index:200;max-height:160px;overflow-y:auto;box-shadow:0 4px 12px rgba(0,0,0,0.15);"></div>
+        </div>
         <button class="btn btn-success" onclick="confirmDeploy()" style="white-space:nowrap;padding:8px 14px;font-size:12px;">✓ 출전 확정</button>
       </div>
     </div>`;
+}
+
+function srchConfirm(val){
+  const dd=document.getElementById('confirmDD');
+  if(!val.trim()||!myGuild.length){dd.style.display='none';return;}
+  const avail=myGuild.filter(m=>spentCount(mySpentMap,m.name)<2&&m.name.includes(val)).slice(0,8);
+  if(!avail.length){dd.style.display='none';return;}
+  const attrIcon={red:'🔴',blue:'🔵',green:'🟢'};
+  dd.innerHTML=avail.map(m=>`<div style="padding:7px 10px;font-size:12px;cursor:pointer;display:flex;align-items:center;gap:8px;" onmouseover="this.style.background='var(--bg4)'" onmouseout="this.style.background=''" onclick="pickConfirm('${m.name}')">
+    <span>${attrIcon[m.attr]}</span>
+    <span style="flex:1;font-weight:500;">${m.name}</span>
+    <span style="font-size:10px;color:var(--text3);">${m.mainPower.toFixed(1)}만</span>
+  </div>`).join('');
+  dd.style.display='block';
+}
+function pickConfirm(name){
+  const inp=document.getElementById('confirmInp');
+  if(inp) inp.value=name;
+  pendingCustom=name;
+  document.getElementById('confirmDD').style.display='none';
 }
 
 function selectOrder(idx){
@@ -568,7 +592,9 @@ function confirmDeploy(){
   if(!selectedEnemy){alert('상대 출전자가 선택되지 않았습니다.');return;}
   const inp=document.getElementById('confirmInp');
   const usedName=(inp?.value||pendingCustom||'').trim();
-  if(!usedName){alert('출전할 멤버 이름을 입력하거나 추천 안을 선택하세요.');return;}
+  if(!usedName){alert('출전할 멤버를 선택하거나 이름을 입력하세요.');return;}
+  const validMember=myGuild.find(x=>x.name===usedName);
+  if(!validMember){alert(`"${usedName}" 은(는) 우리 길드 멤버가 아닙니다.\n목록에서 선택하거나 정확한 이름을 입력하세요.`);return;}
 
   // 우리팀 소진 (Firebase)
   setSpent('mySpentMap', usedName, Math.min(spentCount(mySpentMap,usedName)+1, 2));
