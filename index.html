@@ -125,6 +125,14 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
       <span id="enULabel" style="font-size:12px;font-weight:700;">상대 길드</span>
       <span id="enUSub" style="font-size:10px;color:var(--text3);">CSV 선택</span>
     </label>
+    <!-- 메인급 기준 수치 입력 -->
+    <div style="display:flex;align-items:center;gap:6px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:4px 10px;">
+      <input id="mainThreshInp" type="number" min="1" placeholder="만 단위 기준"
+        style="width:90px;background:transparent;border:none;outline:none;font-size:11px;font-weight:700;color:var(--text);font-family:'Noto Sans KR',sans-serif;text-align:center;"
+        oninput="previewThresh(this.value)"
+        onkeydown="if(event.key==='Enter')saveThresh()">
+      <button onclick="saveThresh()" style="padding:2px 8px;font-size:10px;font-weight:700;background:var(--accent);color:#fff;border:none;border-radius:4px;cursor:pointer;white-space:nowrap;">확인</button>
+    </div>
     <!-- 접속자 슬롯 -->
     <div style="display:flex;align-items:center;gap:6px;margin-left:auto;flex-wrap:wrap;">
       <span style="font-size:10px;font-weight:700;letter-spacing:1px;color:var(--text3);">접속자</span>
@@ -299,6 +307,12 @@ function initFirebaseListeners(){
     }
   });
   // 우리 소진 현황
+  fbWatch('mainThreshold', val => {
+    mainThreshold = val || 0;
+    const inp = document.getElementById('mainThreshInp');
+    if(inp && val) inp.value = val;
+    buildEnemyGrid();
+  });
   fbWatch('mySpentMap', val => {
     mySpentMap = val || {};
     renderMySpent();
@@ -358,6 +372,7 @@ let selectedEnemy=null;
 let selectedOrderIdx=null;
 let lastOrders=[];
 let pendingCustom='';
+let mainThreshold=0; // 메인급 기준 전투력 (만 단위 저장, 0이면 미설정)
 let defPending=null;
 
 // ── CSV ──
@@ -429,6 +444,19 @@ function parseAttr(s){
 function fi(hdrs,cands){for(const c of cands){const i=hdrs.findIndex(h=>h.includes(c));if(i>=0)return i;}return 0;}
 function splitLine(line){const res=[];let cur='',inQ=false;for(const ch of line){if(ch==='"')inQ=!inQ;else if(ch===','&&!inQ){res.push(cur);cur='';}else cur+=ch;}res.push(cur);return res;}
 
+// ── 메인급 기준 수치 저장 ──
+function saveThresh(){
+  if(!requireEdit()) return;
+  const val = parseInt(document.getElementById('mainThreshInp').value||'0');
+  if(!val||val<=0){ alert('수치를 입력해주세요 (예: 500 = 500만)'); return; }
+  mainThreshold = val;
+  fbSet('mainThreshold', val);
+  buildEnemyGrid();
+}
+function previewThresh(val){
+  // 입력 중 실시간 미리보기는 하지 않고 확인 버튼 눌렀을 때만 반영
+}
+
 // ── 상대 출전자 버튼 그리드 ──
 function buildEnemyGrid(){
   const grid=document.getElementById('enemyBtnGrid');
@@ -443,22 +471,68 @@ function buildEnemyGrid(){
     const once=cnt===1;
     const isSelected=selectedEnemy&&selectedEnemy.name===m.name;
     const subIcon=m.subPower>0?attrIcon[m.attr]:'';
-    let bg=isSelected?'rgba(88,166,255,0.2)':'var(--bg3)';
-    let border=isSelected?'var(--accent)':spent?'var(--danger)':once?'var(--warn)':'var(--border2)';
-    let opacity=spent?'0.4':'1';
-    let textColor=spent?'var(--text3)':'var(--text)';
+    // 메인급 판별 (threshold 설정된 경우에만)
+    const isMain = mainThreshold>0 && (m.effPower/10000)>=mainThreshold;
+
+    let bg, border, opacity, textColor, textDecor;
+    textDecor = spent ? 'line-through' : 'none';
+
+    if(isSelected){
+      // 선택 상태: 항상 파란 톤
+      bg = 'rgba(88,166,255,0.2)';
+      border = 'var(--accent)';
+      opacity = '1';
+      textColor = 'var(--text)';
+    } else if(isMain){
+      // 메인급
+      if(spent){
+        bg = 'rgba(88,166,255,0.08)';   // 2회소진: 짙은배경 50% 컬러
+        border = 'rgba(88,166,255,0.2)';
+        opacity = '0.45';
+        textColor = 'var(--text3)';
+      } else if(once){
+        bg = 'rgba(88,166,255,0.18)';   // 1회소진: 짙은배경+warn보더
+        border = 'var(--warn)';
+        opacity = '0.85';
+        textColor = 'var(--text)';
+      } else {
+        bg = 'rgba(88,166,255,0.13)';   // 미소진: 짙은배경
+        border = 'rgba(88,166,255,0.5)';
+        opacity = '1';
+        textColor = 'var(--text)';
+      }
+    } else {
+      // 더미급 (기존 스타일 유지)
+      if(spent){
+        bg = 'var(--bg3)';
+        border = 'rgba(255,255,255,0.15)'; // 더미급 2회소진: 흰색 보더
+        opacity = '0.4';
+        textColor = 'var(--text3)';
+      } else if(once){
+        bg = 'var(--bg3)';
+        border = 'rgba(255,255,255,0.6)'; // 더미급 1회소진: 흰색 보더
+        opacity = '0.8';
+        textColor = 'var(--text2)';
+      } else {
+        bg = 'var(--bg3)';
+        border = 'var(--border2)';
+        opacity = '1';
+        textColor = 'var(--text)';
+      }
+    }
+
     const dispName = m.name.length > 5 ? m.name.slice(0,5)+'...' : m.name;
     return `<button onclick="selectEnemy('${m.name}')"
       style="width:130px;height:28px;background:${bg};border:1px solid ${border};border-radius:5px;
       color:${textColor};font-family:'Noto Sans KR',sans-serif;font-size:11px;font-weight:500;
       cursor:${spent?'not-allowed':'pointer'};opacity:${opacity};
       display:flex;align-items:center;justify-content:center;gap:3px;padding:0 6px;
-      white-space:nowrap;overflow:hidden;transition:all 0.1s;"
+      white-space:nowrap;overflow:hidden;transition:all 0.1s;text-decoration:${textDecor};"
       ${spent?'disabled':''}>
       <span>${attrIcon[m.attr]}</span>
       ${subIcon?`<span style="font-size:9px;">${subIcon}</span>`:''}
       <span>${dispName}</span>
-      ${once?'<span style="font-size:9px;color:var(--warn);margin-left:2px;">1회</span>':''}
+      ${once?`<span style="font-size:9px;color:${isMain?'var(--warn)':'rgba(255,255,255,0.6)'};margin-left:2px;">1회</span>`:''}
     </button>`;
   }).join('');
 }
