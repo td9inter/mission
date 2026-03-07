@@ -647,18 +647,12 @@ function selectOrder(idx){
 
 // ── 출전 확정 ──
 function confirmDeploy(){
-  if(!selectedEnemy){alert('상대 출전자가 선택되지 않았습니다.');return;}
   const inp=document.getElementById('confirmInp');
   const usedName=(inp?.value||pendingCustom||'').trim();
-  if(!usedName){alert('출전할 멤버를 선택하거나 이름을 입력하세요.');return;}
-  const validMember=myGuild.find(x=>x.name===usedName);
-  if(!validMember){alert(`"${usedName}" 은(는) 우리 길드 멤버가 아닙니다.\n목록에서 선택하거나 정확한 이름을 입력하세요.`);return;}
-
   // 우리팀 소진 (Firebase)
   setSpent('mySpentMap', usedName, Math.min(spentCount(mySpentMap,usedName)+1, 2));
   // 상대팀 소진 (Firebase)
   setSpent('enSpentMap', selectedEnemy.name, Math.min(spentCount(enSpentMap,selectedEnemy.name)+1, 2));
-
   // 초기화
   clearSelection();
 }
@@ -991,6 +985,8 @@ confirmDeploy = function(){
   const inp=document.getElementById('confirmInp');
   const usedName=(inp?.value||pendingCustom||'').trim();
   if(!usedName){alert('출전할 멤버를 선택하거나 이름을 입력하세요.');return;}
+  const validMember=myGuild.find(x=>x.name===usedName);
+  if(!validMember){alert('"'+usedName+'" 은(는) 우리 길드 멤버가 아닙니다.');return;}
   if(!requireEdit()) return;
   _confirmDeploy();
 };
