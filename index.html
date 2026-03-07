@@ -288,8 +288,14 @@ function initFirebaseListeners(){
 
 let myGuild=[], enemyGuild=[];
 let myGuildName='', enemyGuildName='';
-// spentMap: name → count (0,1,2)
+// spentMap: name → {count, updatedAt}
 let mySpentMap={}, enSpentMap={};
+
+function spentCount(map, name){ const e=map[name]; if(!e)return 0; return typeof e==='object'?e.count||0:e; }
+function setSpent(path, name, newCount){
+  if(newCount<=0){ db.ref(\`\${path}/\${name}\`).remove(); return; }
+  db.ref(\`\${path}/\${name}\`).set({count:newCount, updatedAt:Date.now()});
+}
 let selectedEnemy=null;
 let selectedOrderIdx=null;
 let lastOrders=[];
@@ -373,7 +379,7 @@ function buildEnemyGrid(){
   }
   const attrIcon={red:'🔴',blue:'🔵',green:'🟢'};
   grid.innerHTML=enemyGuild.map(m=>{
-    const cnt=enSpentMap[m.name]||0;
+    const cnt=spentCount(enSpentMap,m.name);
     const spent=cnt>=2;
     const once=cnt===1;
     const isSelected=selectedEnemy&&selectedEnemy.name===m.name;
@@ -400,7 +406,7 @@ function buildEnemyGrid(){
 
 function selectEnemy(name){
   const m=enemyGuild.find(x=>x.name===name);
-  if(!m||(enSpentMap[m.name]||0)>=2)return;
+  if(!m||spentCount(enSpentMap,m.name)>=2)return;
   fbSet('selectedEnemy', m);
 }
 
@@ -433,7 +439,7 @@ function analyze(){
   const eAttr=selectedEnemy.attr;
 
   // 소진 2회 미만 가용 멤버
-  const avail=myGuild.filter(m=>(mySpentMap[m.name]||0)<2);
+  const avail=myGuild.filter(m=>spentCount(mySpentMap,m.name)<2);
 
   // 상성 반영 실효전력으로 정렬
   const scored=avail.map(m=>{
@@ -473,7 +479,7 @@ function renderOrderResult(){
   let rowsHtml='';
   lastOrders.forEach((o,i)=>{
     const m=o.member, d=o.dummy;
-    const cnt=mySpentMap[m.name]||0;
+    const cnt=spentCount(mySpentMap,m.name);
     let advCls='adv-draw',advTxt='비슷';
     if(m.ratio>=1.1){advCls='adv-win';advTxt='우위';}
     else if(m.ratio<0.85){advCls='adv-lose';advTxt='열세';}
@@ -565,9 +571,9 @@ function confirmDeploy(){
   if(!usedName){alert('출전할 멤버 이름을 입력하거나 추천 안을 선택하세요.');return;}
 
   // 우리팀 소진 (Firebase)
-  fbTransaction(`mySpentMap/${usedName}`, cur => Math.min((cur||0)+1, 2));
+  setSpent('mySpentMap', usedName, Math.min(spentCount(mySpentMap,usedName)+1, 2));
   // 상대팀 소진 (Firebase)
-  fbTransaction(`enSpentMap/${selectedEnemy.name}`, cur => Math.min((cur||0)+1, 2));
+  setSpent('enSpentMap', selectedEnemy.name, Math.min(spentCount(enSpentMap,selectedEnemy.name)+1, 2));
 
   // 초기화
   clearSelection();
@@ -584,9 +590,12 @@ function pips(cnt){
 
 function renderMySpent(){
   const el=document.getElementById('mySpent');
-  const entries=Object.entries(mySpentMap).filter(([,c])=>c>0);
+  const entries=Object.entries(mySpentMap)
+    .map(([name,v])=>({name,count:typeof v==='object'?v.count||0:v,updatedAt:typeof v==='object'?v.updatedAt||0:0}))
+    .filter(e=>e.count>0)
+    .sort((a,b)=>b.updatedAt-a.updatedAt);
   if(!entries.length){el.innerHTML='<div class="no-data">출전 확정 시 표시</div>';return;}
-  el.innerHTML=entries.map(([name,cnt])=>{
+  el.innerHTML=entries.map(({name,count:cnt})=>{
     const m=myGuild.find(x=>x.name===name);
     const ic=m?({red:'🔴',blue:'🔵',green:'🟢'}[m.attr]||''):'';
     return `<div class="spent-item">
@@ -601,9 +610,12 @@ function renderMySpent(){
 
 function renderEnSpent(){
   const el=document.getElementById('enSpent');
-  const entries=Object.entries(enSpentMap).filter(([,c])=>c>0);
+  const entries=Object.entries(enSpentMap)
+    .map(([name,v])=>({name,count:typeof v==='object'?v.count||0:v,updatedAt:typeof v==='object'?v.updatedAt||0:0}))
+    .filter(e=>e.count>0)
+    .sort((a,b)=>b.updatedAt-a.updatedAt);
   if(!entries.length){el.innerHTML='<div class="no-data">상대 출전 확정 시 표시</div>';return;}
-  el.innerHTML=entries.map(([name,cnt])=>{
+  el.innerHTML=entries.map(({name,count:cnt})=>{
     const m=enemyGuild.find(x=>x.name===name);
     const ic=m?({red:'🔴',blue:'🔵',green:'🟢'}[m.attr]||''):'';
     return `<div class="spent-item">
@@ -617,22 +629,12 @@ function renderEnSpent(){
 }
 
 function resetMySpent(name){
-  mySpentMap[name] = Math.max((mySpentMap[name]||0)-1, 0);
-  fbTransaction(`mySpentMap/${name}`, cur => {
-    const next = Math.max((cur||0)-1, 0);
-    return next === 0 ? null : next;
-  });
-  renderMySpent();
-  if(lastOrders.length) renderOrderResult();
+  const next = Math.max(spentCount(mySpentMap,name)-1, 0);
+  setSpent('mySpentMap', name, next);
 }
 function resetEnSpent(name){
-  enSpentMap[name] = Math.max((enSpentMap[name]||0)-1, 0);
-  fbTransaction(`enSpentMap/${name}`, cur => {
-    const next = Math.max((cur||0)-1, 0);
-    return next === 0 ? null : next;
-  });
-  renderEnSpent();
-  buildEnemyGrid();
+  const next = Math.max(spentCount(enSpentMap,name)-1, 0);
+  setSpent('enSpentMap', name, next);
 }
 
 // ── 수성전 ──
@@ -652,7 +654,7 @@ function pickDefMy(name){
 function applyDefenseMy(){
   const name=(document.getElementById('defInpMy').value||'').trim();
   if(!name){alert('이름을 입력하세요.');return;}
-  fbTransaction(`mySpentMap/${name}`, cur => Math.min((cur||0)+1, 2));
+  setSpent('mySpentMap', name, Math.min(spentCount(mySpentMap,name)+1, 2));
   document.getElementById('defInpMy').value='';
   const el=document.getElementById('defAppliedMy');
   el.textContent=`✓ ${name} 처리됨`; el.style.color='var(--success)';
@@ -675,7 +677,7 @@ function pickDefEn(name){
 function applyDefenseEn(){
   const name=(document.getElementById('defInpEn').value||'').trim();
   if(!name){alert('이름을 입력하세요.');return;}
-  fbTransaction(`enSpentMap/${name}`, cur => Math.min((cur||0)+1, 2));
+  setSpent('enSpentMap', name, Math.min(spentCount(enSpentMap,name)+1, 2));
   document.getElementById('defInpEn').value='';
   const el=document.getElementById('defAppliedEn');
   el.textContent=`✓ ${name} 처리됨`; el.style.color='var(--red)';
@@ -694,9 +696,12 @@ function pips(cnt){
 
 function renderMySpent(){
   const el=document.getElementById('mySpent');
-  const entries=Object.entries(mySpentMap).filter(([,c])=>c>0);
+  const entries=Object.entries(mySpentMap)
+    .map(([name,v])=>({name,count:typeof v==='object'?v.count||0:v,updatedAt:typeof v==='object'?v.updatedAt||0:0}))
+    .filter(e=>e.count>0)
+    .sort((a,b)=>b.updatedAt-a.updatedAt);
   if(!entries.length){el.innerHTML='<div class="no-data">출전 확정 시 표시</div>';return;}
-  el.innerHTML=entries.map(([name,cnt])=>{
+  el.innerHTML=entries.map(({name,count:cnt})=>{
     const m=myGuild.find(x=>x.name===name);
     const ic=m?({red:'🔴',blue:'🔵',green:'🟢'}[m.attr]||''):'';
     return `<div class="spent-item">
@@ -711,9 +716,12 @@ function renderMySpent(){
 
 function renderEnSpent(){
   const el=document.getElementById('enSpent');
-  const entries=Object.entries(enSpentMap).filter(([,c])=>c>0);
+  const entries=Object.entries(enSpentMap)
+    .map(([name,v])=>({name,count:typeof v==='object'?v.count||0:v,updatedAt:typeof v==='object'?v.updatedAt||0:0}))
+    .filter(e=>e.count>0)
+    .sort((a,b)=>b.updatedAt-a.updatedAt);
   if(!entries.length){el.innerHTML='<div class="no-data">상대 출전 확정 시 표시</div>';return;}
-  el.innerHTML=entries.map(([name,cnt])=>{
+  el.innerHTML=entries.map(({name,count:cnt})=>{
     const m=enemyGuild.find(x=>x.name===name);
     const ic=m?({red:'🔴',blue:'🔵',green:'🟢'}[m.attr]||''):'';
     return `<div class="spent-item">
