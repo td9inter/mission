@@ -198,8 +198,9 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
 
       <!-- 우리 길드 탭 내용 -->
       <div id="tabMyContent" style="display:none;">
-        <div style="margin-bottom:8px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
           <div class="sec-title" style="margin-bottom:0;">우리 길드 현황</div>
+          <span id="myGridLabel" style="font-size:11px;color:var(--accent);font-weight:700;"></span>
         </div>
         <div id="myBtnGrid" style="display:flex;flex-wrap:wrap;gap:5px;">
           <div style="font-size:11px;color:var(--text3);padding:4px 0;">우리 길드 CSV를 로드하면 여기에 표시됩니다</div>
@@ -510,6 +511,7 @@ function switchGridTab(tab){
     tE.style.background = 'var(--accent)'; tE.style.color = '#fff';
     tM.style.background = 'var(--bg3)';    tM.style.color = 'var(--text2)';
     card.style.background = '';
+    const lbl=document.getElementById('myGridLabel'); if(lbl) lbl.innerHTML='';
   } else {
     tM.style.background = '#fffbe6'; tM.style.color = '#7a6000';
     tE.style.background = 'var(--bg3)'; tE.style.color = 'var(--text2)';
@@ -557,10 +559,12 @@ function buildMyGrid(){
     const dispName=m.name.length>5?m.name.slice(0,5)+'…':m.name;
     const subTip = m.subPower>0 ? ` / 서브 ${m.subPower.toFixed(1)}만` : '';
     const tooltip = `${m.name}\n메인 ${m.mainPower.toFixed(1)}만${subTip}`;
-    return `<div title="${tooltip}" style="width:130px;height:28px;background:${bg};border:1px solid ${border};border-radius:5px;
+    const subTipStr = m.subPower>0 ? ` &nbsp;${attrIcon[m.subAttr||m.attr]||''} ${m.subPower.toFixed(1)}만` : '';
+    const labelHtml = `${m.name} &nbsp;${attrIcon[m.attr]||''} ${m.mainPower.toFixed(1)}만${subTipStr}`;
+    return `<div title="${tooltip}" onclick="document.getElementById('myGridLabel').innerHTML='${labelHtml}'" style="width:130px;height:28px;background:${bg};border:1px solid ${border};border-radius:5px;
       color:${textColor};font-family:'Noto Sans KR',sans-serif;font-size:11px;font-weight:500;
       opacity:${opacity};display:flex;align-items:center;justify-content:center;gap:3px;padding:0 6px;
-      white-space:nowrap;overflow:hidden;text-decoration:${textDecor};cursor:default;">
+      white-space:nowrap;overflow:hidden;text-decoration:${textDecor};cursor:pointer;">
       <span>${attrIcon[m.attr]}</span>
       ${subIcon?`<span style="font-size:9px;">${subIcon}</span>`:''}
       <span>${dispName}</span>
