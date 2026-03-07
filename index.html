@@ -472,15 +472,15 @@ function buildEnemyGrid(){
     const isSelected=selectedEnemy&&selectedEnemy.name===m.name;
     const subIcon=m.subPower>0?attrIcon[m.attr]:'';
     // 메인급 판별 (threshold 설정된 경우에만)
-    const isMain = mainThreshold>0 && (m.effPower/10000)>=mainThreshold;
+    const isMain = mainThreshold>0 && m.effPower>=mainThreshold;  // effPower 이미 만 단위
 
     let bg, border, opacity, textColor, textDecor;
     textDecor = spent ? 'line-through' : 'none';
 
     if(isSelected){
-      // 선택 상태: 항상 파란 톤
-      bg = 'rgba(88,166,255,0.2)';
-      border = 'var(--accent)';
+      // 선택 상태: 초록 톤 (메인급 파란톤과 구분)
+      bg = 'rgba(30,210,100,0.22)';
+      border = 'rgba(30,210,100,0.8)';
       opacity = '1';
       textColor = 'var(--text)';
     } else if(isMain){
