@@ -707,7 +707,7 @@ function renderOrderResult(){
               <span id="mentAtk1" style="flex:1;color:var(--text2);background:var(--bg3);border-radius:4px;padding:4px 8px;font-size:10px;"></span>
               <button onclick="copyMent('mentAtk1')" style="padding:3px 8px;font-size:10px;font-weight:700;background:var(--bg3);color:var(--text2);border:1px solid var(--border);border-radius:4px;cursor:pointer;white-space:nowrap;">복사</button>
             </div>
-            <div style="display:flex;align-items:center;gap:5px;">
+            <div id="mentAtk2Row" style="display:flex;align-items:center;gap:5px;">
               <span id="mentAtk2" style="flex:1;color:var(--text2);background:var(--bg3);border-radius:4px;padding:4px 8px;font-size:10px;"></span>
               <button onclick="copyMent('mentAtk2')" style="padding:3px 8px;font-size:10px;font-weight:700;background:var(--bg3);color:var(--text2);border:1px solid var(--border);border-radius:4px;cursor:pointer;white-space:nowrap;">복사</button>
             </div>
@@ -769,24 +769,29 @@ function updateAutoMent(memberName, dummy){
   const area = document.getElementById('autoMentArea');
   if(!area) return;
 
-  // 내 슬롯 이름 가져오기
-  const myName = mySlot ? (slotNames[mySlot] || mySlot) : '나';
+  // 선택한 우리 길드원 이름
+  const name = memberName || '?';
 
   // 더미 수치
-  const dummyNeeded = dummy && !dummy.impossible ? dummy.needed : 0;
-  const bandNeeded  = dummy && !dummy.impossible ? dummy.bands  : 0;
+  const hasDummy = dummy && !dummy.impossible && dummy.needed > 0;
+  const dummyNeeded = hasDummy ? dummy.needed : 0;
+  const bandNeeded  = hasDummy ? dummy.bands  : 0;
 
-  // 공성 멘트
-  const atk1 = dummyNeeded > 0
-    ? `[${myName}] 메인덱 더미 ${dummyNeeded}개 먹이면 갈게요`
-    : `[${myName}] 메인덱 바로 갈게요`;
-  const atk2 = dummyNeeded > 0
-    ? `더미 ${dummyNeeded}개 먹여주세요`
-    : `더미 없이 출전 가능합니다`;
+  // 공성 멘트1
+  const atk1 = hasDummy
+    ? `더미 ${dummyNeeded}개 먹으면 ${name}님 메인덱 갈게요`
+    : `지금 바로 ${name}님 메인덱 갈게요`;
 
-  // 수성 멘트 (더미반+1 번 자리로 이동 요청)
+  // 공성 멘트2 (더미 있을 때만 표시)
+  const atk2Row = document.getElementById('mentAtk2Row');
+  if(atk2Row) atk2Row.style.display = hasDummy ? 'flex' : 'none';
+  const atk2 = `더미 ${dummyNeeded}개 먹여주세요`;
+
+  // 수성 멘트
   const defPos = bandNeeded + 1;
-  const def1 = `지금 [${myName}] 메인덱 <${defPos}번>으로 자리 시켜주세요`;
+  const def1 = hasDummy
+    ? `지금 ${name}님 [# ${defPos}]까지 올릴게요`
+    : `지금 ${name}님 맨 위로 올릴게요`;
 
   document.getElementById('mentAtk1').textContent = atk1;
   document.getElementById('mentAtk2').textContent = atk2;
