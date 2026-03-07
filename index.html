@@ -910,7 +910,7 @@ function submitPassword(){
   if(!pw){ document.getElementById('pwError').textContent='패스워드를 입력하세요.'; return; }
 
   // passwords 객체에서 일치하는 슬롯 찾기
-  const matched = Object.entries(passwords).find(([,v])=>v===pw);
+  const matched = Object.entries(passwords).find(([,v])=>String(v)===pw);
   if(!matched){
     document.getElementById('pwError').textContent='패스워드가 올바르지 않습니다.';
     return;
