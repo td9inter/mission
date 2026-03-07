@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>길드전 오더 시스템 (라이트)</title>
+<title>길드전 오더 시스템 (v1.0.0 beta)</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&display=swap');
 :root {
@@ -362,6 +362,14 @@ function initFirebaseListeners(){
 let myGuild=[], enemyGuild=[];
 let myGuildName='', enemyGuildName='';
 // 권한/접속자
+// ── 핵심 수치 상수 (여기서만 수정하면 전체 반영) ──
+const ATTR_ADV  = 1.25;  // 우세 상성 배율
+const ATTR_SAME = 1.0;   // 동일 상성 배율
+const ATTR_DIS  = 0.8;   // 약세 상성 배율
+const SAFETY    = 0.90;  // 안전기준 (상대를 내 실효전력의 n% 이하로)
+const DUMMY_MAX = 480;   // 더미 최대 인원 (완전약화 기준)
+const BAND_SIZE = 6;     // 1반 인원
+
 let passwords={}, slotNames={}, onlineUsers={};
 let mySlot=null; // 내가 로그인한 슬롯 키 (null이면 읽기전용)
 let mySessionId=Math.random().toString(36).slice(2,10); // 브라우저 세션 고유ID
@@ -586,7 +594,7 @@ function analyze(){
   // 상성 반영 실효전력으로 정렬
   // 실제 상성배율: 우위 ×1.25 / 동일 ×1.0 / 약세 ×0.8
   // 안전마진 90%: 상대 전력이 내 실효전력의 90% 이하여야 "이길 수 있음"
-  const ATK_MULT = {1: 1.25, 0: 1.0, '-1': 0.8};
+  const ATK_MULT = {1: ATTR_ADV, 0: ATTR_SAME, '-1': ATTR_DIS};
   const scored=avail.map(m=>{
     const a=adv(m.attr,eAttr);
     const mult=ATK_MULT[String(a)];
@@ -595,7 +603,7 @@ function analyze(){
     return{...m,eff,ratio,advVal:a,mult};
   }).sort((a,b)=>{
     // 상대 전력 ep가 내 실효전력의 90% 이하 → "이길 수 있음"
-    const aOk=ep<=a.eff*0.90, bOk=ep<=b.eff*0.90;
+    const aOk=ep<=a.eff*SAFETY, bOk=ep<=b.eff*SAFETY;
     if(aOk&&!bOk)return -1; if(!aOk&&bOk)return 1;
     if(aOk&&bOk)return a.effPower-b.effPower;
     return b.eff-a.eff;
@@ -611,14 +619,14 @@ function analyze(){
 function calcDummy(ep,mp,advVal){
   // 실제 상성배율: 우위 ×1.25 / 동일 ×1.0 / 약세 ×0.8
   // 안전마진 90%: 상대 전력을 내 실효전력의 90% 이하로 약화시켜야 이김
-  const mult = advVal===1 ? 1.25 : advVal===-1 ? 0.8 : 1.0;
+  const mult = advVal===1 ? ATTR_ADV : advVal===-1 ? ATTR_DIS : ATTR_SAME;
   const effMp = mp * mult;        // 내 실효전력
-  const target = effMp * 0.90;    // 상대를 이 수준까지 약화시켜야 함
+  const target = effMp * SAFETY;  // 상대를 이 수준까지 약화시켜야 함
   if(!ep || ep <= target) return null;  // 이미 충족 → 더미 불필요
   const weaken = 1-(target/ep);   // 약화 비율
-  const needed = Math.ceil(weaken*480);
+  const needed = Math.ceil(weaken*DUMMY_MAX);
   if(needed>480)return{impossible:true};
-  const n50=Math.min(Math.ceil(weaken/0.5*240),240);
+  const n50=Math.min(Math.ceil(weaken/0.5*(DUMMY_MAX/2)),DUMMY_MAX/2);
   return{impossible:false,needed,bands:Math.ceil(needed/6),weaken,n50,b50:Math.ceil(n50/6)};
 }
 
@@ -1115,5 +1123,46 @@ initFirebaseListeners();
 
 
 </script>
+
+<!-- 푸터 -->
+<div style="margin-top:24px;padding:14px 20px;background:var(--bg2);border:1px solid var(--border);border-radius:8px;font-family:'Noto Sans KR',sans-serif;">
+  <div style="display:flex;flex-wrap:wrap;gap:24px;align-items:flex-start;">
+
+    <!-- 핵심 수치 -->
+    <div>
+      <div style="font-size:9px;font-weight:700;color:var(--text3);letter-spacing:2px;margin-bottom:6px;">핵심 수치</div>
+      <div id="footerStats" style="font-size:10px;color:var(--text2);line-height:2;"></div>
+    </div>
+
+    <!-- 구분선 -->
+    <div style="width:1px;background:var(--border);align-self:stretch;"></div>
+
+    <!-- 버전 & 업데이트 내역 -->
+    <div style="flex:1;min-width:200px;">
+      <div style="font-size:9px;font-weight:700;color:var(--text3);letter-spacing:2px;margin-bottom:6px;">버전 & 업데이트</div>
+      <div style="font-size:10px;color:var(--text2);line-height:2;">
+        <span style="color:var(--accent);font-weight:700;">v1.0.0 beta</span>
+        <span style="color:var(--text3);margin-left:8px;">— 정식 릴리즈 준비 중</span>
+      </div>
+      <div style="font-size:10px;color:var(--text3);line-height:2;margin-top:2px;">
+        · Firebase 실시간 연동 / 패스워드 인증 / 소진 시스템<br>
+        · 상성 배율 + 안전기준 반영 추천 오더 (2컬럼 카드)<br>
+        · 메인급/더미급 버튼 구분 / 게스트 슬롯 / 모바일 반응형
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+// 푸터 수치 동적 렌더링
+document.getElementById('footerStats').innerHTML =
+  '동일상성 &nbsp;<strong style="color:var(--text);">' + ATTR_SAME.toFixed(2) + '</strong><br>' +
+  '우세상성 &nbsp;<strong style="color:var(--success);">' + ATTR_ADV.toFixed(2) + '</strong><br>' +
+  '약세상성 &nbsp;<strong style="color:var(--danger);">' + ATTR_DIS.toFixed(2) + '</strong><br>' +
+  '안전기준 &nbsp;<strong style="color:var(--gold);">' + SAFETY.toFixed(2) + '</strong><br>' +
+  '더미기준 &nbsp;<strong style="color:var(--text);">' + DUMMY_MAX + '명 / ' + BAND_SIZE + '명(1반)</strong>';
+</script>
+
 </body>
 </html>
