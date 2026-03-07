@@ -456,10 +456,11 @@ function parseCSV(text){
     const mainPower=parsePow(cols[6]);
     const subPower=parsePow(cols[10]);
     const attr=parseAttr(cols[5]||'');
+    const subAttr=parseAttr(cols[9]||'') || attr;
     // bandPower나 mainPower 중 하나라도 있으면 포함
     if(!bandPower&&!mainPower)continue;
     const effPower=mainPower+subPower*0.35;
-    res.push({name:nameVal,bandPower,mainPower,subPower,effPower,attr});
+    res.push({name:nameVal,bandPower,mainPower,subPower,effPower,attr,subAttr});
   }
   return{list:res.sort((a,b)=>b.effPower-a.effPower),guildName};
 }
@@ -530,7 +531,7 @@ function buildMyGrid(){
     const spent=cnt>=2;
     const once=cnt===1;
     const isMain=mainThreshold>0 && m.effPower>=mainThreshold;
-    const subIcon=m.subPower>0?attrIcon[m.attr]:'';
+    const subIcon=m.subPower>0?attrIcon[m.subAttr||m.attr]:'';
 
     let bg, border, opacity, textColor, textDecor;
     textDecor = spent ? 'line-through' : 'none';
@@ -581,7 +582,7 @@ function buildEnemyGrid(){
     const spent=cnt>=2;
     const once=cnt===1;
     const isSelected=selectedEnemy&&selectedEnemy.name===m.name;
-    const subIcon=m.subPower>0?attrIcon[m.attr]:'';
+    const subIcon=m.subPower>0?attrIcon[m.subAttr||m.attr]:'';
     // 메인급 판별 (threshold 설정된 경우에만)
     const isMain = mainThreshold>0 && m.effPower>=mainThreshold;  // effPower 이미 만 단위
 
@@ -887,7 +888,7 @@ function updateAutoMent(memberName, dummy){
     const attrIcon={red:'🔴',blue:'🔵',green:'🟢'};
     const eIcon = attrIcon[selectedEnemy.attr] || '';
     const mainStr = `${eIcon} ${selectedEnemy.mainPower.toFixed(1)}만`;
-    const subStr = selectedEnemy.subPower > 0 ? ` &nbsp;${attrIcon[selectedEnemy.attr] || ''} ${selectedEnemy.subPower.toFixed(1)}만` : '';
+    const subStr = selectedEnemy.subPower > 0 ? ` &nbsp;${attrIcon[selectedEnemy.subAttr||selectedEnemy.attr] || ''} ${selectedEnemy.subPower.toFixed(1)}만` : '';
     infoPower.innerHTML = `<strong>${mainStr}</strong>${subStr}`;
     if(dummy && !dummy.impossible && dummy.needed > 0){
       infoDummy.textContent = `약화 ${Math.round(dummy.weaken*100)}%  더미 ${dummy.needed}명 (~${dummy.bands}반)`;
