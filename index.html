@@ -208,10 +208,8 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
       </div>
     </div>
 
-    <div class="card">
-      <div id="orderArea">
+    <div id="orderArea" class="card">
         <div style="display:flex;align-items:center;justify-content:center;height:80px;color:var(--text3);font-size:12px;">상대 출전자를 선택하고 분석하세요</div>
-      </div>
     </div>
 
   </div>
@@ -794,7 +792,7 @@ function renderOrderResult(){
   document.getElementById('orderArea').innerHTML=`
     <div class="order-result">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
-        <div class="order-label" style="margin-bottom:0;">추천 오더 — 메인투력 상위 ${lastOrders.length}명</div>
+        <div class="order-label" style="margin-bottom:0;">추천 오더 — 효율기준 추천 ${lastOrders.length}명</div>
         <div style="font-size:10px;color:var(--text3);">클릭 선택 후 출전 확정</div>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
