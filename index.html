@@ -169,16 +169,41 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
   <!-- 좌: 상대 출전자 선택 + 추천 오더 -->
   <div style="display:flex;flex-direction:column;gap:10px;">
 
-    <div class="card" style="padding:12px 14px;">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
-        <div class="sec-title" style="margin-bottom:0;">상대 출전자 선택</div>
-        <div style="display:flex;gap:6px;align-items:center;">
-          <span id="ddLabel" style="font-size:11px;color:var(--accent);font-weight:700;"></span>
-          <button class="btn btn-ghost" onclick="clearSelection()" style="font-size:10px;">초기화</button>
+    <div class="card" style="padding:12px 14px;" id="gridCard">
+      <!-- 탭 -->
+      <div style="display:flex;gap:0;margin-bottom:10px;border-radius:6px;overflow:hidden;border:1px solid var(--border2);">
+        <button id="tabEnemy" onclick="switchGridTab('enemy')"
+          style="flex:1;padding:5px 0;font-size:11px;font-weight:700;border:none;cursor:pointer;transition:all 0.15s;background:var(--accent);color:#fff;">
+          ⚔️ 상대 덱 선택
+        </button>
+        <button id="tabMy" onclick="switchGridTab('my')"
+          style="flex:1;padding:5px 0;font-size:11px;font-weight:700;border:none;cursor:pointer;transition:all 0.15s;background:var(--bg3);color:var(--text2);">
+          🛡️ 우리 길드 현황
+        </button>
+      </div>
+
+      <!-- 상대 탭 내용 -->
+      <div id="tabEnemyContent">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+          <div class="sec-title" style="margin-bottom:0;">상대 출전자 선택</div>
+          <div style="display:flex;gap:6px;align-items:center;">
+            <span id="ddLabel" style="font-size:11px;color:var(--accent);font-weight:700;"></span>
+            <button class="btn btn-ghost" onclick="clearSelection()" style="font-size:10px;">초기화</button>
+          </div>
+        </div>
+        <div id="enemyBtnGrid" style="display:flex;flex-wrap:wrap;gap:5px;">
+          <div style="font-size:11px;color:var(--text3);padding:4px 0;">상대 길드 CSV를 로드하면 여기에 선택 버튼이 나타납니다</div>
         </div>
       </div>
-      <div id="enemyBtnGrid" style="display:flex;flex-wrap:wrap;gap:5px;">
-        <div style="font-size:11px;color:var(--text3);padding:4px 0;">상대 길드 CSV를 로드하면 여기에 선택 버튼이 나타납니다</div>
+
+      <!-- 우리 길드 탭 내용 -->
+      <div id="tabMyContent" style="display:none;">
+        <div style="margin-bottom:8px;">
+          <div class="sec-title" style="margin-bottom:0;">우리 길드 현황</div>
+        </div>
+        <div id="myBtnGrid" style="display:flex;flex-wrap:wrap;gap:5px;">
+          <div style="font-size:11px;color:var(--text3);padding:4px 0;">우리 길드 CSV를 로드하면 여기에 표시됩니다</div>
+        </div>
       </div>
     </div>
 
@@ -468,6 +493,77 @@ function saveThresh(){
 }
 function previewThresh(val){
   // 입력 중 실시간 미리보기는 하지 않고 확인 버튼 눌렀을 때만 반영
+}
+
+// ── 탭 전환 ──
+function switchGridTab(tab){
+  const isEnemy = tab === 'enemy';
+  document.getElementById('tabEnemyContent').style.display = isEnemy ? 'block' : 'none';
+  document.getElementById('tabMyContent').style.display   = isEnemy ? 'none'  : 'block';
+
+  const tE = document.getElementById('tabEnemy');
+  const tM = document.getElementById('tabMy');
+  const card = document.getElementById('gridCard');
+
+  if(isEnemy){
+    tE.style.background = 'var(--accent)'; tE.style.color = '#fff';
+    tM.style.background = 'var(--bg3)';    tM.style.color = 'var(--text2)';
+    card.style.background = '';
+  } else {
+    tM.style.background = '#fffbe6'; tM.style.color = '#7a6000';
+    tE.style.background = 'var(--bg3)'; tE.style.color = 'var(--text2)';
+    card.style.background = '#fffbe6';
+    buildMyGrid();
+  }
+}
+
+// ── 우리 길드 현황 그리드 ──
+function buildMyGrid(){
+  const grid = document.getElementById('myBtnGrid');
+  if(!myGuild.length){
+    grid.innerHTML='<div style="font-size:11px;color:var(--text3);padding:4px 0;">우리 길드 CSV를 로드하면 여기에 표시됩니다</div>';
+    return;
+  }
+  const attrIcon={red:'🔴',blue:'🔵',green:'🟢'};
+  grid.innerHTML=myGuild.map(m=>{
+    const cnt=spentCount(mySpentMap,m.name);
+    const spent=cnt>=2;
+    const once=cnt===1;
+    const isMain=mainThreshold>0 && m.effPower>=mainThreshold;
+    const subIcon=m.subPower>0?attrIcon[m.attr]:'';
+
+    let bg, border, opacity, textColor, textDecor;
+    textDecor = spent ? 'line-through' : 'none';
+
+    if(isMain){
+      if(spent){
+        bg='rgba(88,166,255,0.08)'; border='rgba(88,166,255,0.2)'; opacity='0.45'; textColor='var(--text3)';
+      } else if(once){
+        bg='rgba(88,166,255,0.18)'; border='var(--warn)'; opacity='0.85'; textColor='var(--text)';
+      } else {
+        bg='rgba(88,166,255,0.13)'; border='rgba(88,166,255,0.5)'; opacity='1'; textColor='var(--text)';
+      }
+    } else {
+      if(spent){
+        bg='var(--bg3)'; border='rgba(255,255,255,0.15)'; opacity='0.4'; textColor='var(--text3)';
+      } else if(once){
+        bg='var(--bg3)'; border='rgba(255,255,255,0.6)'; opacity='0.8'; textColor='var(--text2)';
+      } else {
+        bg='var(--bg3)'; border='var(--border2)'; opacity='1'; textColor='var(--text)';
+      }
+    }
+
+    const dispName=m.name.length>5?m.name.slice(0,5)+'…':m.name;
+    return `<div style="width:130px;height:28px;background:${bg};border:1px solid ${border};border-radius:5px;
+      color:${textColor};font-family:'Noto Sans KR',sans-serif;font-size:11px;font-weight:500;
+      opacity:${opacity};display:flex;align-items:center;justify-content:center;gap:3px;padding:0 6px;
+      white-space:nowrap;overflow:hidden;text-decoration:${textDecor};">
+      <span>${attrIcon[m.attr]}</span>
+      ${subIcon?`<span style="font-size:9px;">${subIcon}</span>`:''}
+      <span>${dispName}</span>
+      ${once?`<span style="font-size:9px;color:var(--warn);margin-left:2px;">1회</span>`:''}
+    </div>`;
+  }).join('');
 }
 
 // ── 상대 출전자 버튼 그리드 ──
@@ -858,6 +954,7 @@ function pips(cnt){
 }
 
 function renderMySpent(){
+  if(document.getElementById('tabMyContent')?.style.display==='block') buildMyGrid();
   const el=document.getElementById('mySpent');
   const entries=Object.entries(mySpentMap)
     .map(([name,v])=>({name,count:typeof v==='object'?v.count||0:v,updatedAt:typeof v==='object'?v.updatedAt||0:0}))
@@ -970,6 +1067,7 @@ function pips(cnt){
 }
 
 function renderMySpent(){
+  if(document.getElementById('tabMyContent')?.style.display==='block') buildMyGrid();
   const el=document.getElementById('mySpent');
   const entries=Object.entries(mySpentMap)
     .map(([name,v])=>({name,count:typeof v==='object'?v.count||0:v,updatedAt:typeof v==='object'?v.updatedAt||0:0}))
