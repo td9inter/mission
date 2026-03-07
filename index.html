@@ -505,7 +505,7 @@ function analyze(){
 
   // 상성 반영 실효전력으로 정렬
   // 실제 상성배율: 우위 ×1.25 / 동일 ×1.0 / 약세 ×0.8
-  // 안전마진 90% 적용: 실효전력이 상대의 90% 이상이어야 "이길 수 있음"으로 판정
+  // 안전마진 90%: 상대 전력이 내 실효전력의 90% 이하여야 "이길 수 있음"
   const ATK_MULT = {1: 1.25, 0: 1.0, '-1': 0.8};
   const scored=avail.map(m=>{
     const a=adv(m.attr,eAttr);
@@ -514,8 +514,8 @@ function analyze(){
     const ratio=eff/(ep||1);
     return{...m,eff,ratio,advVal:a,mult};
   }).sort((a,b)=>{
-    // 실효전력이 상대의 90% 이상인 사람 → "이길 수 있음" (안전마진 포함)
-    const aOk=a.eff>=ep*0.90, bOk=b.eff>=ep*0.90;
+    // 상대 전력 ep가 내 실효전력의 90% 이하 → "이길 수 있음"
+    const aOk=ep<=a.eff*0.90, bOk=ep<=b.eff*0.90;
     if(aOk&&!bOk)return -1; if(!aOk&&bOk)return 1;
     if(aOk&&bOk)return a.effPower-b.effPower;
     return b.eff-a.eff;
@@ -530,12 +530,12 @@ function analyze(){
 
 function calcDummy(ep,mp,advVal){
   // 실제 상성배율: 우위 ×1.25 / 동일 ×1.0 / 약세 ×0.8
-  // 안전마진 90% 적용: 내 실효전력이 상대의 90% 수준이 되도록 약화
+  // 안전마진 90%: 상대 전력을 내 실효전력의 90% 이하로 약화시켜야 이김
   const mult = advVal===1 ? 1.25 : advVal===-1 ? 0.8 : 1.0;
-  const effMp = mp * mult;  // 내 실효전력
-  const target = ep * 0.90; // 상대를 이 수준으로 약화시켜야 함
-  if(!ep || effMp >= target) return null;  // 이미 안전마진 충족 → 더미 불필요
-  const weaken = 1-(effMp/target);  // 약화 비율
+  const effMp = mp * mult;        // 내 실효전력
+  const target = effMp * 0.90;    // 상대를 이 수준까지 약화시켜야 함
+  if(!ep || ep <= target) return null;  // 이미 충족 → 더미 불필요
+  const weaken = 1-(target/ep);   // 약화 비율
   const needed = Math.ceil(weaken*480);
   if(needed>480)return{impossible:true};
   const n50=Math.min(Math.ceil(weaken/0.5*240),240);
