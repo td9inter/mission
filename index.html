@@ -758,13 +758,14 @@ div.dc { cursor: default; }
     <div style="flex:1;min-width:200px;">
       <div style="font-size:9px;font-weight:700;color:rgba(255,255,255,0.5);letter-spacing:2px;margin-bottom:6px;">버전 & 업데이트</div>
       <div style="font-size:10px;color:rgba(255,255,255,0.85);line-height:2;">
-        <span style="color:#7bc8ff;font-weight:700;">v1.0.0</span>
-        <span style="color:rgba(255,255,255,0.5);margin-left:8px;">— 2025.03 정식 릴리즈</span>
+        <span style="color:#7bc8ff;font-weight:700;">v1.1</span>
+        <span style="color:rgba(255,255,255,0.5);margin-left:8px;">— 2026.03.08 UI 개편</span>
       </div>
       <div style="font-size:10px;color:rgba(255,255,255,0.6);line-height:2;margin-top:2px;">
-        · Firebase 실시간 연동 / 패스워드 인증 / 운영진+게스트 슬롯<br>
-        · 실제 상성배율 반영 추천 오더 / 오토멘트 자동생성 (복사 지원)<br>
-        · 메인급/더미급 버튼 구분 / 2컬럼 카드 / 모바일 반응형
+        · 덱 버튼 2단 구조 / 반전력·서브속성 표시 / subAttr 파싱 수정<br>
+        · 추천오더 UI 개편 (토글선택 / 정렬 개선 / 색상 정책 통일)<br>
+        · 소진 영역 파랑·빨강 배경 / 경고 후 입력값 초기화<br>
+        · SUB_RATE 상수화 / 탑바 구조 조정
       </div>
     </div>
   </div>
@@ -1765,6 +1766,7 @@ document.getElementById('footerStats').innerHTML =
   `우세상성 &nbsp;<strong style="color:#7dffb0;">${ATTR_ADV.toFixed(2)}</strong><br>` +
   `약세상성 &nbsp;<strong style="color:#ff9090;">${ATTR_DIS.toFixed(2)}</strong><br>` +
   `안전기준 &nbsp;<strong style="color:#ffd97d;">${SAFETY.toFixed(2)}</strong><br>` +
+  `서브반영 &nbsp;<strong style="color:#c9b8ff;">${(SUB_RATE * 100).toFixed(0)}%</strong><br>` +
   `더미기준 &nbsp;<strong style="color:#fff;">${DUMMY_MAX}명 / ${BAND_SIZE}명(1반)</strong>`;
 
 </script>
