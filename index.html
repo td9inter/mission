@@ -1080,7 +1080,7 @@ function buildMyGrid() {
       else            { bg='var(--bg3)'; border='var(--blue)';     opacity='1';   textColor='var(--text)'; }
     }
 
-    return `<div class="dc" style="background:${bg};border-color:${border};opacity:${opacity};color:${textColor};" title="${tooltip}">
+    return `<div class="dc" style="width:190px;height:58px;background:${bg};border-color:${border};opacity:${opacity};color:${textColor};" title="${tooltip}">
       <div class="dc-t">
         <span class="dc-name" style="text-decoration:${textDecor};">${dispName}</span>
         <span class="dc-bp">(${m.bandPower.toFixed(1)}만)</span>
@@ -1133,7 +1133,7 @@ function buildEnemyGrid() {
     }
 
     return `<button class="dc" onclick="selectEnemy('${m.name}')" ${spent ? 'disabled' : ''}
-      style="background:${bg};border-color:${border};opacity:${opacity};color:${textColor};">
+      style="width:190px;height:58px;background:${bg};border-color:${border};opacity:${opacity};color:${textColor};">
       <div class="dc-t">
         <span class="dc-name" style="text-decoration:${textDecor};">${dispName}</span>
         <span class="dc-bp">(${m.bandPower.toFixed(1)}만)</span>
