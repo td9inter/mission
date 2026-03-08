@@ -112,9 +112,10 @@ body::before {
   border-radius: 0; cursor: pointer; white-space: nowrap;
 }
 .btn-sm-accent {
-  padding: 0 8px; height: 24px; font-size: 10px; font-weight: 700;
+  padding: 0 10px; font-size: 10px; font-weight: 700;
   background: var(--accent); color: #fff;
   border: none; border-radius: 0; cursor: pointer; white-space: nowrap;
+  align-self: stretch; display: flex; align-items: center;
 }
 .btn-sm-copy {
   padding: 3px 8px; font-size: 10px; font-weight: 700;
@@ -177,8 +178,15 @@ body::before {
 /* 상단바 inner — 좌우패널 max-width 맞춤 정렬 */
 .topbar {
   max-width: 1200px; margin: 0 auto;
-  padding: 0 16px; height: 42px;
-  display: flex; align-items: center; gap: 8px; flex-wrap: nowrap;
+  padding: 0 16px; min-height: 42px;
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+}
+
+/* 모바일: 상단바 2줄 허용, 메인덱 수치칸 항상 보이게 */
+@media (max-width: 600px) {
+  .topbar { padding: 6px 10px; gap: 6px; }
+  .online-wrap { margin-left: 0; width: 100%; justify-content: flex-start; }
+  .topbar-sep { display: none; }
 }
 .topbar-label {
   font-size: 10px; font-weight: 700;
@@ -217,23 +225,26 @@ body::before {
 }
 
 /* 접속자 영역 — 큰 박스 하나로 묶고 텍스트 색으로만 구분 */
-.online-wrap { display: flex; align-items: center; gap: 0; margin-left: auto; flex-wrap: nowrap; }
-.online-label { font-size: 10px; font-weight: 700; letter-spacing: 1px; color: var(--text3); margin-right: 6px; }
+.online-wrap { display: flex; align-items: center; gap: 6px; margin-left: auto; flex-wrap: nowrap; }
+.online-label { font-size: 10px; font-weight: 700; letter-spacing: 1px; color: var(--text3); }
 .online-box {
-  display: flex; align-items: center; gap: 8px;
+  display: flex; align-items: center; gap: 7px;
   background: var(--bg3); border: 1px solid var(--border2);
   height: 28px; padding: 0 10px;
 }
-#onlineSlots  { display: flex; gap: 8px; align-items: center; }
+#onlineSlots { display: flex; gap: 7px; align-items: center; }
 
-/* 접속자 슬롯 — 박스 없이 텍스트 색만 */
-.slot-chip        { font-size: 10px; font-weight: 700; white-space: nowrap; }
-.slot-me          { color: var(--blue); }
-.slot-online      { color: var(--green); }
-.slot-offline     { color: var(--text3); }
+/* 접속자 슬롯 — 박스 없이 텍스트 색만, border 없음 */
+.slot-chip     { font-size: 10px; font-weight: 700; white-space: nowrap; background: none; border: none; padding: 0; }
+.slot-me       { color: var(--blue); }
+.slot-online   { color: var(--green); }
+.slot-offline  { color: var(--text3); }
 
 /* 전체 리셋 구분용 세퍼레이터 */
-.topbar-sep { width: 1px; height: 20px; background: var(--border); margin: 0 6px; flex-shrink: 0; }
+.topbar-sep { width: 1px; height: 20px; background: var(--border); margin: 0 2px; flex-shrink: 0; }
+
+/* 업로드 버튼 ok 상태 — 웜앰버 서브텍스트로 로드 완료 표시 */
+.upload-btn.ok .upload-sub { color: var(--gold); font-weight: 700; }
 
 /* ════════════════════════════════════════════════════════════
    [CSS] 패스워드 모달
@@ -408,14 +419,14 @@ body::before {
 .spent-cols-grid  { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 
 .defense-area {
-  background: rgba(30,140,69,0.04); border: 1px solid rgba(30,140,69,0.2);
+  background: rgba(91,143,212,0.04); border: 1px solid rgba(91,143,212,0.2);
   border-radius: 0; padding: 8px 10px;
 }
 .defense-area-en {
-  background: rgba(255,85,85,0.03); border-color: rgba(255,85,85,0.2);
+  background: rgba(201,107,107,0.04); border-color: rgba(201,107,107,0.2);
 }
 .defense-area-title { font-size: 10px; font-weight: 700; margin-bottom: 5px; }
-.defense-area-title.my { color: var(--accent); }
+.defense-area-title.my { color: var(--blue); }
 .defense-area-title.en { color: var(--red); }
 
 .def-dd-wrap { position: relative; margin-bottom: 5px; }
@@ -1580,27 +1591,23 @@ function renderOnlineSlots() {
   const staffOrder = ['slot1','slot2','slot3','slot4','slot5','slot6'];
   const guestOrder = ['guest1','guest2','guest3'];
 
+  // 운영진 슬롯 — 텍스트 색만
   const staffHtml = staffOrder.map(key => {
-    const name     = slotNames[key] || key;
-    const isMe     = onlineUsers[key] === mySessionId;
-    const isOnline = !!onlineUsers[key];
-    const cls      = isMe ? 'slot-me' : isOnline ? 'slot-online' : 'slot-offline';
-    return `<div class="slot-chip ${cls}">${name}</div>`;
+    const name  = slotNames[key] || key;
+    const isMe  = onlineUsers[key] === mySessionId;
+    const isOn  = !!onlineUsers[key];
+    const cls   = isMe ? 'slot-me' : isOn ? 'slot-online' : 'slot-offline';
+    return `<span class="slot-chip ${cls}">${name}</span>`;
   }).join('');
 
-  // 게스트: G: ● ● ● 형식, 각 점이 guest1/2/3 로그인 여부 연동
+  // 게스트: G: ● ● ● — 각 점 색만 바꿈, 박스 없음
   const guestDots = guestOrder.map(k => {
-    const isMe     = onlineUsers[k] === mySessionId;
-    const isOnline = !!onlineUsers[k];
-    const color    = isMe ? 'var(--accent)' : isOnline ? 'var(--success)' : 'var(--border)';
-    return `<span style="color:${color};font-size:10px;line-height:1;" title="${slotNames[k]||k}">●</span>`;
-  }).join(' ');
-  const iAmGuest  = guestOrder.some(k => onlineUsers[k] === mySessionId);
-  const anyGuest  = guestOrder.some(k => !!onlineUsers[k]);
-  const gLabelCls = iAmGuest ? 'slot-me' : anyGuest ? 'slot-online' : 'slot-offline';
-  const guestHtml = `<div class="slot-chip ${gLabelCls}" style="display:flex;align-items:center;gap:4px;">
-    <span>G:</span>${guestDots}
-  </div>`;
+    const isMe  = onlineUsers[k] === mySessionId;
+    const isOn  = !!onlineUsers[k];
+    const cls   = isMe ? 'slot-me' : isOn ? 'slot-online' : 'slot-offline';
+    return `<span class="slot-chip ${cls}" title="${slotNames[k]||k}">●</span>`;
+  }).join('');
+  const guestHtml = `<span class="slot-chip slot-offline">G:</span>${guestDots}`;
 
   el.innerHTML = staffHtml + guestHtml;
 }
