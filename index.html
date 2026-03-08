@@ -65,13 +65,12 @@ body::before {
    ════════════════════════════════════════════════════════════ */
 .wrap {
   position: relative; z-index: 1;
-  width: 100%; max-width: 1200px;
+  max-width: 1200px;
   margin: 0 auto;
   padding: 15px 16px 16px;
   display: flex;
   flex-direction: column;
   gap: 12px;
-  box-sizing: border-box;
 }
 
 .main-grid {
@@ -79,10 +78,9 @@ body::before {
   grid-template-columns: 1fr 385px;
   gap: 12px;
   align-items: start;
-  width: 100%;
 }
 
-.left-panel  { display: flex; flex-direction: column; gap: 0; min-width: 0; width: 100%; }
+.left-panel  { display: flex; flex-direction: column; gap: 0; }
 .right-panel { display: flex; flex-direction: column; gap: 10px; }
 
 /* ════════════════════════════════════════════════════════════
@@ -336,7 +334,7 @@ body::before {
 }
 .grid-header .sec-title { margin-bottom: 0; }
 
-.btn-grid { display: grid; grid-template-columns: repeat(auto-fill, 190px); gap: 5px; }
+.btn-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 5px; }
 .btn-grid-empty { font-size: 11px; color: var(--text3); padding: 4px 0; }
 .dk-wrap { width:190px; height:60px; border:1px solid; border-radius:0; overflow:hidden; box-sizing:border-box; display:flex; flex-direction:column; padding:0; margin:0; font-family:'Noto Sans KR',sans-serif; }
 .dk-wrap[disabled] { cursor:not-allowed; }
@@ -627,7 +625,7 @@ div.dk-wrap    { cursor:default; }
   <div class="left-panel">
 
     <!-- 탭 + 그리드 카드 -->
-    <div class="card" id="gridCard" style="padding:0;">
+    <div class="card card-md" id="gridCard">
       <!-- 탭 버튼 -->
       <div class="tab-bar">
         <button id="tabEnemy" class="tab-btn active-enemy" onclick="switchGridTab('enemy')">
@@ -639,14 +637,14 @@ div.dk-wrap    { cursor:default; }
       </div>
 
       <!-- 상대 탭 내용 -->
-      <div id="tabEnemyContent" style="padding:10px;">
+      <div id="tabEnemyContent">
         <div id="enemyBtnGrid" class="btn-grid">
           <div class="btn-grid-empty">상대 길드 CSV를 로드하면 여기에 선택 버튼이 나타납니다</div>
         </div>
       </div>
 
       <!-- 우리 길드 탭 내용 -->
-      <div id="tabMyContent" style="display:none;padding:10px;">
+      <div id="tabMyContent" style="display:none;">
         <div id="myBtnGrid" class="btn-grid">
           <div class="btn-grid-empty">우리 길드 CSV를 로드하면 여기에 표시됩니다</div>
         </div>
