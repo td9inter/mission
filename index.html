@@ -94,7 +94,7 @@ body::before {
   transition: all 0.15s;
 }
 .btn-accent  { background: var(--accent);  color: #fff; font-size: 13px; padding: 10px 20px; }
-.btn-accent:hover { background: #79c0ff; }
+.btn-accent:hover { background: var(--accent); }
 .btn-success { background: var(--success); color: #fff; font-size: 12px; padding: 8px 16px; }
 .btn-success:hover { filter: brightness(1.1); }
 .btn-ghost {
@@ -502,7 +502,7 @@ div.dc { cursor: default; }
 .spent-item {
   display: flex; align-items: center; justify-content: space-between;
   padding: 4px 8px;
-  background: var(--bg3); border: 1px solid var(--border2);
+  background: rgba(255,255,255,0.45); border: 1px solid rgba(255,255,255,0.6);
   border-radius: 0; margin-bottom: 4px;
 }
 .spent-name {
@@ -1455,8 +1455,15 @@ function pickConfirm(name) {
 }
 
 function confirmDeploy() {
-  const inp     = document.getElementById('confirmInp');
+  const inp      = document.getElementById('confirmInp');
   const usedName = (inp?.value || pendingCustom || '').trim();
+  if (!usedName) { alert('출전 멤버 이름을 입력하세요.'); return; }
+  if (myGuild.length && !myGuild.find(x => x.name === usedName)) {
+    if (inp) inp.value = '';
+    pendingCustom = '';
+    alert(`"${usedName}" 은(는) 우리 길드 멤버가 아닙니다.`);
+    return;
+  }
   setSpent('mySpentMap', usedName,         Math.min(spentCount(mySpentMap, usedName) + 1, 2));
   setSpent('enSpentMap', selectedEnemy.name, Math.min(spentCount(enSpentMap, selectedEnemy.name) + 1, 2));
   clearSelection();
@@ -1547,7 +1554,7 @@ function pickDefMy(name) {
 function applyDefenseMy() {
   const name = (document.getElementById('defInpMy').value || '').trim();
   if (!name) { alert('이름을 입력하세요.'); return; }
-  if (myGuild.length && !myGuild.find(x => x.name === name)) { alert(`"${name}" 은(는) 우리 길드 멤버가 아닙니다.`); return; }
+  if (myGuild.length && !myGuild.find(x => x.name === name)) { document.getElementById('defInpMy').value = ''; alert(`"${name}" 은(는) 우리 길드 멤버가 아닙니다.`); return; }
   setSpent('mySpentMap', name, Math.min(spentCount(mySpentMap, name) + 1, 2));
   document.getElementById('defInpMy').value = '';
   const el = document.getElementById('defAppliedMy');
@@ -1578,7 +1585,7 @@ function pickDefEn(name) {
 function applyDefenseEn() {
   const name = (document.getElementById('defInpEn').value || '').trim();
   if (!name) { alert('이름을 입력하세요.'); return; }
-  if (enemyGuild.length && !enemyGuild.find(x => x.name === name)) { alert(`"${name}" 은(는) 상대 길드 멤버가 아닙니다.`); return; }
+  if (enemyGuild.length && !enemyGuild.find(x => x.name === name)) { document.getElementById('defInpEn').value = ''; alert(`"${name}" 은(는) 상대 길드 멤버가 아닙니다.`); return; }
   setSpent('enSpentMap', name, Math.min(spentCount(enSpentMap, name) + 1, 2));
   document.getElementById('defInpEn').value = '';
   const el = document.getElementById('defAppliedEn');
