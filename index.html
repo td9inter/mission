@@ -340,16 +340,20 @@ body::before {
 .btn-grid { display:flex; flex-wrap:wrap; gap:5px; }
 .dc { width:190px; height:58px; flex-shrink:0; flex-grow:0; }
 .btn-grid-empty { font-size:11px; color:var(--text3); padding:4px 0; }
-/* ── 덱 카드 버튼 2단 ── */
-.dc { display:flex; flex-direction:column; width:100%; height:58px; border:1px solid transparent; box-sizing:border-box; overflow:hidden; padding:0; margin:0; font-family:'Noto Sans KR',sans-serif; cursor:pointer; }
-div.dc { cursor:default; }
-.dc[disabled] { cursor:not-allowed; }
-.dc-t { display:flex; align-items:center; flex:1; padding:0 8px; gap:5px; font-size:12px; font-weight:700; overflow:hidden; white-space:nowrap; }
-.dc-name { flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-.dc-bp   { font-size:10px; font-weight:400; flex-shrink:0; }
-.dc-once { font-size:9px; flex-shrink:0; color:var(--warn); }
-.dc-b { display:flex; align-items:center; height:20px; padding:0 8px; gap:3px; font-size:10px; flex-shrink:0; background:rgba(0,0,0,0.10); overflow:hidden; white-space:nowrap; }
-.dc-b span { flex-shrink:0; }
+/* ── 덱 카드 버튼 단일 박스 ── */
+.dc {
+  display: block;
+  width: 190px; height: 58px;
+  border: 1px solid transparent;
+  box-sizing: border-box;
+  overflow: hidden;
+  padding: 4px 8px;
+  font-family: 'Noto Sans KR', sans-serif;
+  cursor: pointer;
+  line-height: 1.4;
+}
+div.dc { cursor: default; }
+.dc[disabled] { cursor: not-allowed; }
 
 /* 추천 오더 결과 박스 */
 .order-result {
@@ -1080,17 +1084,7 @@ function buildMyGrid() {
       else            { bg='var(--bg3)'; border='var(--blue)';     opacity='1';   textColor='var(--text)'; }
     }
 
-    return `<div class="dc" style="width:190px;height:58px;background:${bg};border-color:${border};opacity:${opacity};color:${textColor};" title="${tooltip}">
-      <div class="dc-t">
-        <span class="dc-name" style="text-decoration:${textDecor};">${dispName}</span>
-        <span class="dc-bp">(${m.bandPower.toFixed(1)}만)</span>
-        ${once ? `<span class="dc-once">1회</span>` : ''}
-      </div>
-      <div class="dc-b">
-        <span>${attrIcon[m.attr]}</span><span>${m.mainPower.toFixed(1)}만</span>
-        ${m.subPower > 0 ? `<span style="margin-left:3px;">${attrIcon[m.subAttr||m.attr]}</span><span>${m.subPower.toFixed(1)}만</span>` : ''}
-      </div>
-    </div>`;
+    return `<div class="dc" style="width:190px;height:58px;background:${bg};border-color:${border};opacity:${opacity};color:${textColor};text-decoration:${textDecor};" title="${tooltip}"><div style="font-size:12px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${dispName} <span style="font-size:10px;font-weight:400;">(${m.bandPower.toFixed(1)}만)</span>${once ? ` <span style="font-size:9px;color:var(--warn);">1회</span>` : ''}</div><div style="font-size:10px;margin-top:4px;white-space:nowrap;overflow:hidden;">${attrIcon[m.attr]} ${m.mainPower.toFixed(1)}만${m.subPower > 0 ? ` &nbsp;${attrIcon[m.subAttr||m.attr]} ${m.subPower.toFixed(1)}만` : ''}</div></div>`;
   }).join('');
 }
 
@@ -1132,18 +1126,7 @@ function buildEnemyGrid() {
       else           { bg='var(--bg3)'; border='var(--red)';     opacity='1';   textColor='var(--text)'; }
     }
 
-    return `<button class="dc" onclick="selectEnemy('${m.name}')" ${spent ? 'disabled' : ''}
-      style="width:190px;height:58px;background:${bg};border-color:${border};opacity:${opacity};color:${textColor};">
-      <div class="dc-t">
-        <span class="dc-name" style="text-decoration:${textDecor};">${dispName}</span>
-        <span class="dc-bp">(${m.bandPower.toFixed(1)}만)</span>
-        ${once ? `<span class="dc-once">1회</span>` : ''}
-      </div>
-      <div class="dc-b">
-        <span>${attrIcon[m.attr]}</span><span>${m.mainPower.toFixed(1)}만</span>
-        ${m.subPower > 0 ? `<span style="margin-left:3px;">${attrIcon[m.subAttr||m.attr]}</span><span>${m.subPower.toFixed(1)}만</span>` : ''}
-      </div>
-    </button>`;
+    return `<button class="dc" onclick="selectEnemy('${m.name}')" ${spent ? 'disabled' : ''} style="width:190px;height:58px;background:${bg};border-color:${border};opacity:${opacity};color:${textColor};text-decoration:${textDecor};text-align:left;" title="${m.name}"><div style="font-size:12px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${dispName} <span style="font-size:10px;font-weight:400;">(${m.bandPower.toFixed(1)}만)</span>${once ? ` <span style="font-size:9px;color:var(--warn);">1회</span>` : ''}</div><div style="font-size:10px;margin-top:4px;white-space:nowrap;overflow:hidden;">${attrIcon[m.attr]} ${m.mainPower.toFixed(1)}만${m.subPower > 0 ? ` &nbsp;${attrIcon[m.subAttr||m.attr]} ${m.subPower.toFixed(1)}만` : ''}</div></button>`;
   }).join('');
 }
 
