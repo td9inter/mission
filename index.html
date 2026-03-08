@@ -336,21 +336,19 @@ body::before {
 }
 .grid-header .sec-title { margin-bottom: 0; }
 
-.btn-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 5px; }
-.btn-grid-empty { font-size: 11px; color: var(--text3); padding: 4px 0; }
-.dk-wrap { width:190px; height:60px; border:1px solid; border-radius:0; overflow:hidden; box-sizing:border-box; display:flex; flex-direction:column; padding:0; margin:0; font-family:'Noto Sans KR',sans-serif; }
-.dk-wrap[disabled] { cursor:not-allowed; }
-button.dk-wrap { cursor:pointer; }
-div.dk-wrap    { cursor:default; }
-.dk-top { display:flex; align-items:center; flex:1; padding:0 8px; gap:5px; font-size:12px; font-weight:700; overflow:hidden; white-space:nowrap; box-sizing:border-box; }
-.dk-name { flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-.dk-bp   { font-size:10px; font-weight:400; white-space:nowrap; flex-shrink:0; }
-.dk-once { font-size:9px; white-space:nowrap; flex-shrink:0; }
-.dk-bot  { display:flex; align-items:center; height:22px; padding:0 8px; gap:4px; font-size:10px; background:rgba(0,0,0,0.08); overflow:hidden; white-space:nowrap; flex-shrink:0; box-sizing:border-box; }
-.dk-icon { font-size:10px; line-height:1; flex-shrink:0; }
-.dk-mp   { font-size:10px; flex-shrink:0; }
-.dk-sep  { font-size:9px; color:var(--border2); flex-shrink:0; }
-.dk-sp   { font-size:10px; flex-shrink:0; }
+/* ── 덱 버튼 그리드 ── */
+.btn-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(180px,1fr)); gap:5px; }
+.btn-grid-empty { font-size:11px; color:var(--text3); padding:4px 0; }
+/* ── 덱 카드 버튼 2단 ── */
+.dc { display:flex; flex-direction:column; width:100%; height:58px; border:1px solid transparent; box-sizing:border-box; overflow:hidden; padding:0; margin:0; font-family:'Noto Sans KR',sans-serif; cursor:pointer; }
+div.dc { cursor:default; }
+.dc[disabled] { cursor:not-allowed; }
+.dc-t { display:flex; align-items:center; flex:1; padding:0 8px; gap:5px; font-size:12px; font-weight:700; overflow:hidden; white-space:nowrap; }
+.dc-name { flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.dc-bp   { font-size:10px; font-weight:400; flex-shrink:0; }
+.dc-once { font-size:9px; flex-shrink:0; color:var(--warn); }
+.dc-b { display:flex; align-items:center; height:20px; padding:0 8px; gap:3px; font-size:10px; flex-shrink:0; background:rgba(0,0,0,0.10); overflow:hidden; white-space:nowrap; }
+.dc-b span { flex-shrink:0; }
 
 /* 추천 오더 결과 박스 */
 .order-result {
@@ -1081,16 +1079,15 @@ function buildMyGrid() {
       else            { bg='var(--bg3)'; border='var(--blue)';     opacity='1';   textColor='var(--text)'; }
     }
 
-    return `<div class="dk-wrap" style="background:${bg};border-color:${border};opacity:${opacity};color:${textColor};" title="${tooltip}">
-      <div class="dk-top" style="background:${bg};">
-        <span class="dk-name" style="text-decoration:${textDecor};">${dispName}</span>
-        <span class="dk-bp">${m.bandPower.toFixed(1)}만</span>
-        ${once ? `<span class="dk-once" style="color:var(--warn);">1회</span>` : ''}
+    return `<div class="dc" style="background:${bg};border-color:${border};opacity:${opacity};color:${textColor};" title="${tooltip}">
+      <div class="dc-t">
+        <span class="dc-name" style="text-decoration:${textDecor};">${dispName}</span>
+        <span class="dc-bp">(${m.bandPower.toFixed(1)}만)</span>
+        ${once ? `<span class="dc-once">1회</span>` : ''}
       </div>
-      <div class="dk-bot">
-        <span class="dk-icon">${attrIcon[m.attr]}</span>
-        <span class="dk-mp">${m.mainPower.toFixed(1)}만</span>
-        ${m.subPower > 0 ? `<span class="dk-sep">|</span><span class="dk-icon">${attrIcon[m.subAttr||m.attr]}</span><span class="dk-sp">${m.subPower.toFixed(1)}만</span>` : ''}
+      <div class="dc-b">
+        <span>${attrIcon[m.attr]}</span><span>${m.mainPower.toFixed(1)}만</span>
+        ${m.subPower > 0 ? `<span style="margin-left:3px;">${attrIcon[m.subAttr||m.attr]}</span><span>${m.subPower.toFixed(1)}만</span>` : ''}
       </div>
     </div>`;
   }).join('');
@@ -1134,17 +1131,16 @@ function buildEnemyGrid() {
       else           { bg='var(--bg3)'; border='var(--red)';     opacity='1';   textColor='var(--text)'; }
     }
 
-    return `<button class="dk-wrap" onclick="selectEnemy('${m.name}')" ${spent ? 'disabled' : ''}
+    return `<button class="dc" onclick="selectEnemy('${m.name}')" ${spent ? 'disabled' : ''}
       style="background:${bg};border-color:${border};opacity:${opacity};color:${textColor};">
-      <div class="dk-top">
-        <span class="dk-name" style="text-decoration:${textDecor};">${dispName}</span>
-        <span class="dk-bp">${m.bandPower.toFixed(1)}만</span>
-        ${once ? `<span class="dk-once" style="color:var(--warn);">1회</span>` : ''}
+      <div class="dc-t">
+        <span class="dc-name" style="text-decoration:${textDecor};">${dispName}</span>
+        <span class="dc-bp">(${m.bandPower.toFixed(1)}만)</span>
+        ${once ? `<span class="dc-once">1회</span>` : ''}
       </div>
-      <div class="dk-bot">
-        <span class="dk-icon">${attrIcon[m.attr]}</span>
-        <span class="dk-mp">${m.mainPower.toFixed(1)}만</span>
-        ${m.subPower > 0 ? `<span class="dk-sep">|</span><span class="dk-icon">${attrIcon[m.subAttr||m.attr]}</span><span class="dk-sp">${m.subPower.toFixed(1)}만</span>` : ''}
+      <div class="dc-b">
+        <span>${attrIcon[m.attr]}</span><span>${m.mainPower.toFixed(1)}만</span>
+        ${m.subPower > 0 ? `<span style="margin-left:3px;">${attrIcon[m.subAttr||m.attr]}</span><span>${m.subPower.toFixed(1)}만</span>` : ''}
       </div>
     </button>`;
   }).join('');
