@@ -691,7 +691,7 @@ div.dc { cursor: default; }
 
     <!-- 덱 소모 수동 체크 -->
     <div class="card card-md">
-      <div class="sec-title" style="color:var(--success);margin-bottom:8px;">덱 소모 수동 체크</div>
+      <div class="sec-title" style="color:var(--text);margin-bottom:8px;">덱 소모 수동 체크</div>
       <div class="deck-check-grid">
 
         <!-- 우리 길드 -->
@@ -716,7 +716,7 @@ div.dc { cursor: default; }
               style="font-size:11px;padding:5px 8px;">
             <div id="defDDEn" class="def-dd"></div>
           </div>
-          <button class="btn btn-accent" style="width:100%;font-size:10px;padding:5px;border-radius:0;" onclick="applyDefenseEn()">✓ 적용</button>
+          <button class="btn" style="width:100%;font-size:10px;padding:5px;border-radius:0;background:var(--red);border-color:var(--red);color:#fff;font-weight:700;" onclick="applyDefenseEn()">✓ 적용</button>
           <div class="def-applied" id="defAppliedEn"></div>
         </div>
 
@@ -725,11 +725,11 @@ div.dc { cursor: default; }
 
     <!-- 소진현황: 우리 / 상대 나란히 -->
     <div class="spent-cols-grid">
-      <div class="card card-sm">
+      <div class="card card-sm" style="background:var(--blue-dim);border-color:rgba(91,143,212,0.3);">
         <div class="sec-title sec-title-sm">🛡️ 우리 소진</div>
         <div id="mySpent"><div class="no-data">출전 확정 시 표시</div></div>
       </div>
-      <div class="card card-sm">
+      <div class="card card-sm" style="background:var(--red-dim);border-color:rgba(201,107,107,0.3);">
         <div class="sec-title sec-title-sm">⚔️ 상대 소진</div>
         <div id="enSpent"><div class="no-data">출전 확정 시 표시</div></div>
       </div>
