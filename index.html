@@ -337,15 +337,15 @@ body::before {
 
 .btn-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, 210px);
+  grid-template-columns: repeat(auto-fill, 190px);
   gap: 5px;
 }
 .btn-grid-empty { font-size: 11px; color: var(--text3); padding: 4px 0; }
 
-/* ── 덱 버튼 2단 구조 210×60px ── */
+/* ── 덱 버튼 2단 구조 190×60px ── */
 .deck-btn {
-  display: block;
-  width: 210px; height: 60px;
+  display: flex; flex-direction: column;
+  width: 190px; height: 60px;
   border-style: solid; border-width: 1px; border-radius: 0;
   overflow: hidden; padding: 0; margin: 0;
   box-sizing: border-box; cursor: pointer;
@@ -354,7 +354,7 @@ body::before {
 .deck-btn[disabled] { cursor: not-allowed; }
 .dk-top {
   display: flex; align-items: center;
-  height: 38px; padding: 0 8px; gap: 6px;
+  flex: 1; padding: 0 8px; gap: 6px;
   font-size: 12px; font-weight: 700;
   overflow: hidden; white-space: nowrap; box-sizing: border-box;
 }
@@ -365,7 +365,7 @@ body::before {
   display: flex; align-items: center;
   height: 22px; padding: 0 8px; gap: 4px;
   font-size: 10px; background: rgba(0,0,0,0.07);
-  box-sizing: border-box; overflow: hidden; white-space: nowrap;
+  box-sizing: border-box; overflow: hidden; white-space: nowrap; flex-shrink: 0;
 }
 .dk-icon { font-size: 10px; line-height: 1; flex-shrink: 0; }
 .dk-mp   { font-size: 10px; flex-shrink: 0; }
