@@ -328,7 +328,7 @@ body::before {
   margin: 0;
 }
 
-.grid-card-my { background: #fffbe6; }
+.grid-card-my { background: var(--bg2); }
 
 .grid-header {
   display: flex; align-items: center;
@@ -350,6 +350,7 @@ body::before {
   font-family: 'Noto Sans KR', sans-serif;
   cursor: pointer;
   position: relative;
+  text-align: left;
 }
 div.dc { cursor: default; }
 .dc[disabled] { cursor: not-allowed; }
@@ -1269,13 +1270,8 @@ function renderOrderResult() {
       dummyRow = `<div class="dummy-impossible">⚠️ 더미로 처리 불가</div>`;
     }
 
-    const radioHtml = `<div class="order-radio ${sel ? 'checked' : ''}">
-      ${sel ? '<div style="width:5px;height:5px;border-radius:50%;background:#000;"></div>' : ''}
-    </div>`;
-
     return `<div class="order-card ${sel ? 'selected' : ''}" onclick="selectOrder(${i})">
       <div class="order-card-row">
-        ${radioHtml}
         <span class="order-num">${i + 1}</span>
         <span class="abadge ${attrCls[m.attr]}">${attrIcon[m.attr]}</span>
         <span class="order-name">${dispName}${cntBadge}</span>
@@ -1295,7 +1291,7 @@ function renderOrderResult() {
   document.getElementById('orderArea').innerHTML = `
     <div class="order-result">
       <div class="order-header">
-        <div class="order-label">추천 오더 — 메인전력 상위 ${lastOrders.length}명</div>
+        <div class="order-label">추천 오더 — 효율기준 상위 ${lastOrders.length}명</div>
         <div class="order-hint">클릭 선택 후 출전 확정</div>
       </div>
       <div class="order-cols">
@@ -1351,6 +1347,14 @@ function renderOrderResult() {
    [JS] 오더 카드 선택 & 오토멘트
    ════════════════════════════════════════════════════════════ */
 function selectOrder(idx) {
+  if (selectedOrderIdx === idx) {
+    selectedOrderIdx = null;
+    pendingCustom = '';
+    const inp = document.getElementById('confirmInp');
+    if (inp) inp.value = '';
+    renderOrderResult();
+    return;
+  }
   selectedOrderIdx = idx;
   const o = lastOrders[idx];
   const m = o?.member;
