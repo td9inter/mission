@@ -443,9 +443,15 @@ div.dc { cursor: default; }
   display: grid; grid-template-columns: 44px 1fr; gap: 5px; align-items: center;
 }
 .ment-key {
-  color: var(--text3); font-weight: 700; font-size: 10px; white-space: nowrap;
+  font-weight: 700; font-size: 10px; white-space: nowrap;
+  padding: 2px 6px; border-radius: 3px; text-align: center;
 }
-.ment-key-def { margin-top: 4px; }
+.ment-key-atk {
+  background: rgba(201,107,107,0.15); color: var(--red);
+}
+.ment-key-def {
+  background: rgba(91,143,212,0.15); color: var(--blue); margin-top: 4px;
+}
 .ment-col { display: flex; flex-direction: column; gap: 4px; }
 .ment-row { display: flex; align-items: center; gap: 5px; }
 .ment-text {
@@ -550,6 +556,7 @@ div.dc { cursor: default; }
 @media (max-width: 600px) {
   .main-grid { grid-template-columns: 1fr !important; }
   .main-grid .right-panel { order: 3; }
+  .order-num { display: none; }
 }
 </style>
 </head>
@@ -1313,7 +1320,7 @@ function renderOrderResult() {
       <!-- 오토멘트 -->
       <div id="autoMentArea" class="ment-area">
         <div class="ment-grid">
-          <span class="ment-key">공성시</span>
+          <span class="ment-key ment-key-atk">공성시</span>
           <div class="ment-col">
             <div class="ment-row">
               <span id="mentAtk1" class="ment-text"></span>
@@ -1385,7 +1392,7 @@ function updateAutoMent(memberName, dummy) {
     const attrIcon = { red:'🔴', blue:'🔵', green:'🟢' };
     const eIcon    = attrIcon[selectedEnemy.attr] || '';
     infoPower.innerHTML = `<strong>${eIcon} ${selectedEnemy.mainPower.toFixed(1)}만</strong>` +
-      (selectedEnemy.subPower > 0 ? ` &nbsp;${eIcon} ${selectedEnemy.subPower.toFixed(1)}만` : '');
+      (selectedEnemy.subPower > 0 ? ` &nbsp;${attrIcon[selectedEnemy.subAttr || selectedEnemy.attr]} ${selectedEnemy.subPower.toFixed(1)}만` : '');
     infoDummy.textContent = (hasDummy && dummy.needed > 0)
       ? `약화 ${Math.round(dummy.weaken * 100)}%  더미 ${dummy.needed}명 (~${dummy.bands}반)` : '';
     infoBar.style.display = 'block';
