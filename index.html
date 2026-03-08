@@ -335,7 +335,7 @@ body::before {
 }
 .grid-header .sec-title { margin-bottom: 0; }
 
-.btn-grid { display: flex; flex-wrap: wrap; gap: 5px; }
+.btn-grid { display: flex; flex-wrap: wrap; gap: 5px; overflow: hidden; }
 .btn-grid-empty { font-size: 11px; color: var(--text3); padding: 4px 0; }
 
 /* 덱 버튼 — 2단 구조 (상단: 이름+반전력 / 하단: 속성불릿+서브전력) */
@@ -1082,14 +1082,14 @@ function buildMyGrid() {
     return `<div class="deck-btn" style="background:${bg};border-color:${border};opacity:${opacity};cursor:default;"
       title="${m.name} 반전력 ${m.bandPower.toFixed(1)}만 / 메인 ${m.mainPower.toFixed(1)}만${m.subPower > 0 ? ' / 서브 ' + m.subPower.toFixed(1) + '만' : ''}">
       <div class="deck-btn-top" style="background:${topColor};color:${topTextColor};">
-        <span class="deck-dot">${attrIcon[m.attr]}</span>
         <span class="deck-btn-name" style="text-decoration:${textDecor};">${dispName}</span>
         <span class="deck-btn-power">${m.bandPower.toFixed(1)}만</span>
         ${once ? `<span class="deck-btn-once">1회</span>` : ''}
       </div>
       <div class="deck-btn-bot">
         <span class="deck-dot">${attrIcon[m.attr]}</span>
-        ${m.subPower > 0 ? `<span class="deck-dot">${attrIcon[m.subAttr || m.attr]}</span><span class="deck-sub-power">${m.subPower.toFixed(1)}만</span>` : ''}
+        <span class="deck-sub-power">${m.mainPower.toFixed(1)}만</span>
+        ${m.subPower > 0 ? `<span class="deck-dot" style="margin-left:4px;">${attrIcon[m.subAttr || m.attr]}</span><span class="deck-sub-power">${m.subPower.toFixed(1)}만</span>` : ''}
       </div>
     </div>`;
   }).join('');
@@ -1135,14 +1135,14 @@ function buildEnemyGrid() {
       style="background:${bg};border-color:${border};opacity:${opacity};"
       title="${m.name} 반전력 ${m.bandPower.toFixed(1)}만 / 메인 ${m.mainPower.toFixed(1)}만${m.subPower > 0 ? ' / 서브 ' + m.subPower.toFixed(1) + '만' : ''}">
       <div class="deck-btn-top" style="background:${topColor};color:${topTextColor};">
-        <span class="deck-dot">${attrIcon[m.attr]}</span>
         <span class="deck-btn-name" style="text-decoration:${textDecor};">${dispName}</span>
         <span class="deck-btn-power">${m.bandPower.toFixed(1)}만</span>
         ${once ? `<span class="deck-btn-once">1회</span>` : ''}
       </div>
       <div class="deck-btn-bot">
         <span class="deck-dot">${attrIcon[m.attr]}</span>
-        ${m.subPower > 0 ? `<span class="deck-dot">${attrIcon[m.subAttr || m.attr]}</span><span class="deck-sub-power">${m.subPower.toFixed(1)}만</span>` : ''}
+        <span class="deck-sub-power">${m.mainPower.toFixed(1)}만</span>
+        ${m.subPower > 0 ? `<span class="deck-dot" style="margin-left:4px;">${attrIcon[m.subAttr || m.attr]}</span><span class="deck-sub-power">${m.subPower.toFixed(1)}만</span>` : ''}
       </div>
     </button>`;
   }).join('');
