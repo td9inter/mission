@@ -585,7 +585,6 @@ div.dc { cursor: default; }
       <span class="upload-label" id="enULabel">상대 길드</span>
       <span class="upload-sub"  id="enUSub">CSV 선택</span>
     </label>
-    <div class="topbar-div"></div>
     <div class="thresh-wrap">
       <input id="mainThreshInp" type="number" min="1" placeholder="수치(만)"
         class="thresh-inp"
@@ -593,6 +592,7 @@ div.dc { cursor: default; }
         onkeydown="if(event.key==='Enter')saveThresh()">
       <button class="btn-sm-accent" onclick="saveThresh()">확인</button>
     </div>
+    <div class="topbar-div"></div>
   </div>
 
   <!-- 그룹2: 접속자 슬롯 (중앙) -->
@@ -785,6 +785,7 @@ const ATTR_DIS  = 0.8;   // 약세 상성 배율
 const SAFETY    = 0.90;  // 안전기준 (상대를 내 실효전력의 n% 이하로)
 const DUMMY_MAX = 480;   // 더미 최대 인원 (완전약화 기준)
 const BAND_SIZE = 6;     // 1반 인원
+const SUB_RATE  = 0.35;  // 서브덱 전력 반영 비율
 
 
 /* ════════════════════════════════════════════════════════════
@@ -998,7 +999,7 @@ function parseCSV(text) {
     const attr      = parseAttr(cols[5] || '');
     const subAttr   = parseAttr(cols[9] || '');
     if (!bandPower && !mainPower) continue;
-    const effPower = mainPower + subPower * 0.35;
+    const effPower = mainPower + subPower * SUB_RATE;
     res.push({ name: nameVal, bandPower, mainPower, subPower, effPower, attr, subAttr });
   }
   return { list: res.sort((a, b) => b.effPower - a.effPower), guildName };
