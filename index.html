@@ -334,8 +334,21 @@ body::before {
 }
 .grid-header .sec-title { margin-bottom: 0; }
 
-.btn-grid { display: flex; flex-wrap: wrap; gap: 5px; }
+.btn-grid { display: grid; grid-template-columns: repeat(auto-fill, 190px); gap: 5px; }
 .btn-grid-empty { font-size: 11px; color: var(--text3); padding: 4px 0; }
+.dk-wrap { width:190px; height:60px; border:1px solid; border-radius:0; overflow:hidden; box-sizing:border-box; display:flex; flex-direction:column; padding:0; margin:0; font-family:'Noto Sans KR',sans-serif; }
+.dk-wrap[disabled] { cursor:not-allowed; }
+button.dk-wrap { cursor:pointer; }
+div.dk-wrap    { cursor:default; }
+.dk-top { display:flex; align-items:center; flex:1; padding:0 8px; gap:5px; font-size:12px; font-weight:700; overflow:hidden; white-space:nowrap; box-sizing:border-box; }
+.dk-name { flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.dk-bp   { font-size:10px; font-weight:400; white-space:nowrap; flex-shrink:0; }
+.dk-once { font-size:9px; white-space:nowrap; flex-shrink:0; }
+.dk-bot  { display:flex; align-items:center; height:22px; padding:0 8px; gap:4px; font-size:10px; background:rgba(0,0,0,0.08); overflow:hidden; white-space:nowrap; flex-shrink:0; box-sizing:border-box; }
+.dk-icon { font-size:10px; line-height:1; flex-shrink:0; }
+.dk-mp   { font-size:10px; flex-shrink:0; }
+.dk-sep  { font-size:9px; color:var(--border2); flex-shrink:0; }
+.dk-sp   { font-size:10px; flex-shrink:0; }
 
 /* 추천 오더 결과 박스 */
 .order-result {
@@ -1066,15 +1079,17 @@ function buildMyGrid() {
       else            { bg='var(--bg3)'; border='var(--blue)';     opacity='1';   textColor='var(--text)'; }
     }
 
-    return `<div title="${tooltip}"
-      style="width:130px;height:28px;background:${bg};border:1px solid ${border};border-radius:0;
-        color:${textColor};font-family:'Noto Sans KR',sans-serif;font-size:11px;font-weight:500;
-        opacity:${opacity};display:flex;align-items:center;justify-content:center;gap:3px;padding:0 6px;
-        white-space:nowrap;overflow:hidden;text-decoration:${textDecor};cursor:default;">
-      <span>${attrIcon[m.attr]}</span>
-      ${subIcon ? `<span style="font-size:9px;">${subIcon}</span>` : ''}
-      <span>${dispName}</span>
-      ${once ? `<span style="font-size:9px;color:var(--warn);margin-left:2px;">1회</span>` : ''}
+    return `<div class="dk-wrap" style="background:${bg};border-color:${border};opacity:${opacity};color:${textColor};" title="${tooltip}">
+      <div class="dk-top" style="background:${bg};">
+        <span class="dk-name" style="text-decoration:${textDecor};">${dispName}</span>
+        <span class="dk-bp">${m.bandPower.toFixed(1)}만</span>
+        ${once ? `<span class="dk-once" style="color:var(--warn);">1회</span>` : ''}
+      </div>
+      <div class="dk-bot">
+        <span class="dk-icon">${attrIcon[m.attr]}</span>
+        <span class="dk-mp">${m.mainPower.toFixed(1)}만</span>
+        ${m.subPower > 0 ? `<span class="dk-sep">|</span><span class="dk-icon">${attrIcon[m.subAttr||m.attr]}</span><span class="dk-sp">${m.subPower.toFixed(1)}만</span>` : ''}
+      </div>
     </div>`;
   }).join('');
 }
@@ -1117,16 +1132,18 @@ function buildEnemyGrid() {
       else           { bg='var(--bg3)'; border='var(--red)';     opacity='1';   textColor='var(--text)'; }
     }
 
-    return `<button onclick="selectEnemy('${m.name}')" ${spent ? 'disabled' : ''}
-      style="width:130px;height:28px;background:${bg};border:1px solid ${border};border-radius:0;
-        color:${textColor};font-family:'Noto Sans KR',sans-serif;font-size:11px;font-weight:500;
-        cursor:${spent ? 'not-allowed' : 'pointer'};opacity:${opacity};
-        display:flex;align-items:center;justify-content:center;gap:3px;padding:0 6px;
-        white-space:nowrap;overflow:hidden;transition:all 0.1s;text-decoration:${textDecor};">
-      <span>${attrIcon[m.attr]}</span>
-      ${subIcon ? `<span style="font-size:9px;">${subIcon}</span>` : ''}
-      <span>${dispName}</span>
-      ${once ? `<span style="font-size:9px;color:var(--warn);margin-left:2px;">1회</span>` : ''}
+    return `<button class="dk-wrap" onclick="selectEnemy('${m.name}')" ${spent ? 'disabled' : ''}
+      style="background:${bg};border-color:${border};opacity:${opacity};color:${textColor};">
+      <div class="dk-top">
+        <span class="dk-name" style="text-decoration:${textDecor};">${dispName}</span>
+        <span class="dk-bp">${m.bandPower.toFixed(1)}만</span>
+        ${once ? `<span class="dk-once" style="color:var(--warn);">1회</span>` : ''}
+      </div>
+      <div class="dk-bot">
+        <span class="dk-icon">${attrIcon[m.attr]}</span>
+        <span class="dk-mp">${m.mainPower.toFixed(1)}만</span>
+        ${m.subPower > 0 ? `<span class="dk-sep">|</span><span class="dk-icon">${attrIcon[m.subAttr||m.attr]}</span><span class="dk-sp">${m.subPower.toFixed(1)}만</span>` : ''}
+      </div>
     </button>`;
   }).join('');
 }
