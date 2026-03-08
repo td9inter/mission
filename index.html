@@ -6,1344 +6,637 @@
 <title>길드전 오더 시스템 (v1.0.0)</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&display=swap');
+
+/* ════════════════════════════════════════════════════════════
+   [CSS] 디자인 토큰 — CSS 변수 (색상/테마)
+   ════════════════════════════════════════════════════════════ */
 :root {
-  --bg:#efefef; --bg2:#ffffff; --bg3:#f5f5f5; --bg4:#e8e8e8;
-  --border:#d0d0d0; --border2:#e0e0e0;
-  --text:#1a1a2e; --text2:#555570; --text3:#9999b0;
-  --red:#d93025; --red-dim:#fde8e7;
-  --blue:#1a6ef5; --blue-dim:#e8f0fe;
-  --green:#1e8c45; --green-dim:#e6f4ea;
-  --gold:#b8860b; --gold-dim:#fef9e7;
-  --accent:#1a6ef5; --danger:#d93025; --success:#1e8c45; --warn:#e37400;
-  --pink:#9c27b0; --pink-dim:#f3e5f5;
+  --bg:    #efefef; --bg2: #ffffff; --bg3: #f5f5f5; --bg4: #e8e8e8;
+  --border: #d0d0d0; --border2: #e0e0e0;
+  --text:  #1a1a2e; --text2: #555570; --text3: #9999b0;
+  --red:   #d93025; --red-dim:   #fde8e7;
+  --blue:  #1a6ef5; --blue-dim:  #e8f0fe;
+  --green: #1e8c45; --green-dim: #e6f4ea;
+  --gold:  #b8860b; --gold-dim:  #fef9e7;
+  --accent:  #1a6ef5;
+  --danger:  #d93025;
+  --success: #1e8c45;
+  --warn:    #e37400;
+  --pink:    #9c27b0; --pink-dim: #f3e5f5;
 }
-*{box-sizing:border-box;margin:0;padding:0;}
-body{background:var(--bg);color:var(--text);font-family:'Noto Sans KR',sans-serif;min-height:100vh;display:flex;flex-direction:column;}
-body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(26,110,245,0.06) 1px,transparent 1px),linear-gradient(90deg,rgba(26,110,245,0.06) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0;}
-.wrap{position:relative;z-index:1;max-width:1200px;margin:0 auto;padding:16px;display:flex;flex-direction:column;gap:12px;}
 
-/* 공통 */
-.btn{display:inline-flex;align-items:center;justify-content:center;gap:5px;border:none;border-radius:6px;cursor:pointer;font-family:'Noto Sans KR',sans-serif;font-weight:700;transition:all 0.15s;}
-.btn-accent{background:var(--accent);color:#fff;font-size:13px;padding:10px 20px;}
-.btn-accent:hover{background:#79c0ff;}
-.btn-success{background:var(--success);color:#fff;font-size:12px;padding:8px 16px;}
-.btn-success:hover{filter:brightness(1.1);}
-.btn-ghost{background:transparent;color:var(--text2);border:1px solid var(--border);font-size:11px;padding:5px 12px;}
-.btn-ghost:hover{border-color:var(--text2);color:var(--text);}
-.btn-warn{background:rgba(210,153,34,0.15);color:var(--warn);border:1px solid rgba(210,153,34,0.3);font-size:11px;padding:5px 12px;}
-.inp{background:var(--bg4);border:1px solid var(--border);border-radius:5px;color:var(--text);font-family:'Noto Sans KR',sans-serif;font-size:12px;padding:7px 10px;outline:none;transition:border-color 0.2s;width:100%;}
-.inp:focus{border-color:var(--accent);}
-.inp::placeholder{color:var(--text3);}
-.card{background:var(--bg2);border:1px solid var(--border2);border-radius:8px;padding:16px;box-shadow:0 1px 4px rgba(0,0,0,0.08);}
-.sec-title{font-size:10px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:var(--text3);margin-bottom:10px;display:flex;align-items:center;gap:6px;}
-.sec-title::before{content:'';width:2px;height:10px;background:var(--accent);border-radius:2px;flex-shrink:0;}
-.divider{height:1px;background:var(--border2);margin:12px 0;}
-.no-data{font-size:11px;color:var(--text3);text-align:center;padding:12px 0;}
+/* ════════════════════════════════════════════════════════════
+   [CSS] 리셋 & 베이스
+   ════════════════════════════════════════════════════════════ */
+* { box-sizing: border-box; margin: 0; padding: 0; }
 
-/* 소진 현황 박스 */
-.spent-box{font-size:12px;}
-.spent-item{display:flex;align-items:center;justify-content:space-between;padding:4px 8px;background:var(--bg3);border:1px solid var(--border2);border-radius:4px;margin-bottom:4px;}
-.spent-name{font-weight:500;font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:80px;}
-.spent-pips{display:flex;gap:2px;align-items:center;flex-shrink:0;}
-.pip{width:11px;height:11px;border-radius:2px;border:1px solid var(--border);}
-.pip.on{background:var(--danger);border-color:var(--danger);}
-.pip.off{background:var(--bg4);}
-.spent-label{font-size:9px;color:var(--text3);margin-left:4px;}
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Noto Sans KR', sans-serif;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
 
-/* 드롭다운 */
-.dd-wrap{position:relative;}
-.dd-select{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:'Noto Sans KR',sans-serif;font-size:13px;padding:10px 14px;cursor:pointer;display:flex;align-items:center;justify-content:space-between;transition:border-color 0.2s;}
-.dd-select:hover{border-color:var(--accent);}
-.dd-select.open{border-color:var(--accent);}
-.dd-menu{position:absolute;top:calc(100%+4px);left:0;right:0;background:var(--bg3);border:1px solid var(--accent);border-radius:6px;z-index:100;max-height:240px;overflow-y:auto;box-shadow:0 8px 24px rgba(0,0,0,0.4);}
-.dd-item{padding:9px 14px;font-size:12px;cursor:pointer;display:flex;align-items:center;gap:10px;transition:background 0.1s;border-bottom:1px solid var(--border2);}
-.dd-item:last-child{border-bottom:none;}
-.dd-item:hover{background:var(--bg4);}
-.dd-item-name{flex:1;font-weight:500;}
-.dd-item-pow{font-family:'Noto Sans KR',sans-serif;font-size:10px;color:var(--text2);}
+/* 배경 그리드 패턴 */
+body::before {
+  content: '';
+  position: fixed; inset: 0;
+  background-image:
+    linear-gradient(rgba(26,110,245,0.06) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(26,110,245,0.06) 1px, transparent 1px);
+  background-size: 40px 40px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ════════════════════════════════════════════════════════════
+   [CSS] 레이아웃 — 래퍼 & 그리드
+   ════════════════════════════════════════════════════════════ */
+.wrap {
+  position: relative; z-index: 1;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.main-grid {
+  display: grid;
+  grid-template-columns: 1fr 385px;
+  gap: 12px;
+  align-items: start;
+}
+
+.left-panel  { display: flex; flex-direction: column; gap: 10px; }
+.right-panel { display: flex; flex-direction: column; gap: 10px; }
+
+/* ════════════════════════════════════════════════════════════
+   [CSS] 공통 컴포넌트 — 버튼/인풋/카드/뱃지
+   ════════════════════════════════════════════════════════════ */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 5px;
+  border: none; border-radius: 6px; cursor: pointer;
+  font-family: 'Noto Sans KR', sans-serif; font-weight: 700;
+  transition: all 0.15s;
+}
+.btn-accent  { background: var(--accent);  color: #fff; font-size: 13px; padding: 10px 20px; }
+.btn-accent:hover { background: #79c0ff; }
+.btn-success { background: var(--success); color: #fff; font-size: 12px; padding: 8px 16px; }
+.btn-success:hover { filter: brightness(1.1); }
+.btn-ghost {
+  background: transparent; color: var(--text2);
+  border: 1px solid var(--border); font-size: 11px; padding: 5px 12px;
+}
+.btn-ghost:hover { border-color: var(--text2); color: var(--text); }
+.btn-warn {
+  background: rgba(210,153,34,0.15); color: var(--warn);
+  border: 1px solid rgba(210,153,34,0.3); font-size: 11px; padding: 5px 12px;
+}
+.btn-danger {
+  background: rgba(218,54,51,0.12); color: var(--danger);
+  border: 1px solid rgba(218,54,51,0.3);
+  padding: 4px 12px; font-size: 10px; font-weight: 700;
+  border-radius: 5px; cursor: pointer; white-space: nowrap;
+}
+.btn-sm-accent {
+  padding: 2px 8px; font-size: 10px; font-weight: 700;
+  background: var(--accent); color: #fff;
+  border: none; border-radius: 4px; cursor: pointer; white-space: nowrap;
+}
+.btn-sm-copy {
+  padding: 3px 8px; font-size: 10px; font-weight: 700;
+  background: var(--bg3); color: var(--text2);
+  border: 1px solid var(--border); border-radius: 4px; cursor: pointer; white-space: nowrap;
+}
+.btn-sm-pw {
+  padding: 4px 12px; font-size: 10px; font-weight: 700;
+  background: var(--bg3); color: var(--text2);
+  border: 1px solid var(--border); border-radius: 5px; cursor: pointer; white-space: nowrap;
+}
+
+.inp {
+  background: var(--bg4); border: 1px solid var(--border);
+  border-radius: 5px; color: var(--text);
+  font-family: 'Noto Sans KR', sans-serif; font-size: 12px;
+  padding: 7px 10px; outline: none; transition: border-color 0.2s; width: 100%;
+}
+.inp:focus { border-color: var(--accent); }
+.inp::placeholder { color: var(--text3); }
+
+.card {
+  background: var(--bg2); border: 1px solid var(--border2);
+  border-radius: 8px; padding: 16px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+}
+.card-sm { padding: 10px 12px; }
+.card-md { padding: 12px 14px; }
+
+.sec-title {
+  font-size: 10px; font-weight: 700;
+  letter-spacing: 3px; text-transform: uppercase;
+  color: var(--text3); margin-bottom: 10px;
+  display: flex; align-items: center; gap: 6px;
+}
+.sec-title::before {
+  content: ''; width: 2px; height: 10px;
+  background: var(--accent); border-radius: 2px; flex-shrink: 0;
+}
+.sec-title-sm { font-size: 9px; margin-bottom: 6px; }
+
+.divider { height: 1px; background: var(--border2); margin: 12px 0; }
+.no-data { font-size: 11px; color: var(--text3); text-align: center; padding: 12px 0; }
 
 /* 속성 뱃지 */
-.abadge{font-size:11px;font-weight:700;padding:2px 7px;border-radius:20px;}
-.ab-red{background:var(--red-dim);color:var(--red);}
-.ab-blue{background:var(--blue-dim);color:var(--blue);}
-.ab-green{background:var(--green-dim);color:var(--green);}
+.abadge { font-size: 11px; font-weight: 700; padding: 2px 7px; border-radius: 20px; }
+.ab-red   { background: var(--red-dim);   color: var(--red); }
+.ab-blue  { background: var(--blue-dim);  color: var(--blue); }
+.ab-green { background: var(--green-dim); color: var(--green); }
 
-/* 오더 결과 */
-.order-result{padding:14px;}
-.order-label{font-size:10px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:var(--pink);margin-bottom:12px;}
-.order-options{display:flex;flex-direction:column;gap:8px;}
-.order-opt{background:var(--bg3);border:1px solid var(--border2);border-radius:6px;padding:12px 14px;display:flex;align-items:center;gap:10px;transition:border-color 0.2s;}
-.order-opt:hover{border-color:var(--border);}
-.order-opt.selected{border-color:var(--accent);background:rgba(88,166,255,0.08);}
-.order-opt-num{font-family:'Noto Sans KR',sans-serif;font-size:11px;font-weight:700;color:var(--text3);width:24px;}
-.order-opt-name{flex:1;font-size:14px;font-weight:700;}
-.order-opt-power{font-family:'Noto Sans KR',sans-serif;font-size:11px;color:var(--text2);}
-.order-opt-adv{font-size:11px;font-weight:700;padding:2px 8px;border-radius:4px;}
-.adv-win{background:rgba(63,185,80,0.15);color:var(--success);}
-.adv-draw{background:rgba(210,153,34,0.15);color:var(--warn);}
-.adv-lose{background:rgba(218,54,51,0.15);color:var(--danger);}
-.dummy-tag{background:var(--gold-dim);border:1px solid rgba(255,215,0,0.2);color:var(--gold);font-size:10px;font-weight:700;padding:2px 8px;border-radius:4px;font-family:'Noto Sans KR',sans-serif;}
-.dummy-tag.ok{background:var(--green-dim);border-color:rgba(68,204,102,0.2);color:var(--green);}
-.select-radio{width:18px;height:18px;border-radius:50%;border:2px solid var(--border);background:var(--bg4);cursor:pointer;flex-shrink:0;transition:all 0.15s;display:flex;align-items:center;justify-content:center;}
-.select-radio.checked{border-color:var(--accent);background:var(--accent);}
-.select-radio.checked::after{content:'';width:6px;height:6px;border-radius:50%;background:#000;}
+/* ════════════════════════════════════════════════════════════
+   [CSS] 상단바 영역 — 데이터 로드 / 메인급 기준 / 접속자
+   ════════════════════════════════════════════════════════════ */
+.topbar {
+  padding: 10px 16px;
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+}
+.topbar-label {
+  font-size: 10px; font-weight: 700;
+  letter-spacing: 2px; color: var(--text3);
+  text-transform: uppercase; white-space: nowrap;
+}
+.upload-btn {
+  display: flex; align-items: center; gap: 8px;
+  background: var(--bg3); border: 1px dashed var(--border);
+  border-radius: 6px; padding: 6px 14px; cursor: pointer;
+  position: relative; transition: all 0.2s; white-space: nowrap;
+}
+.upload-btn input[type="file"] {
+  position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%;
+}
+.upload-btn:hover { border-color: var(--accent); }
+.upload-btn.ok   { border-style: solid; border-color: var(--success); }
+.upload-icon  { font-size: 16px; }
+.upload-label { font-size: 12px; font-weight: 700; }
+.upload-sub   { font-size: 10px; color: var(--text3); }
 
-/* 확정 영역 */
-.confirm-area{background:var(--bg3);border:1px solid var(--border2);border-radius:6px;padding:12px 14px;margin-top:10px;}
-.confirm-label{font-size:11px;color:var(--text2);margin-bottom:8px;}
-.confirm-row{display:flex;gap:8px;align-items:center;}
+.thresh-wrap {
+  display: flex; align-items: center; gap: 6px;
+  background: var(--bg3); border: 1px solid var(--border);
+  border-radius: 6px; padding: 4px 10px;
+}
+.thresh-inp {
+  width: 90px; background: transparent; border: none; outline: none;
+  font-size: 11px; font-weight: 700; color: var(--text);
+  font-family: 'Noto Sans KR', sans-serif; text-align: center;
+}
 
-/* 수성전 */
-.defense-area{background:rgba(30,140,69,0.04);border:1px solid rgba(30,140,69,0.2);border-radius:6px;padding:12px;}
+.online-wrap { display: flex; align-items: center; gap: 6px; margin-left: auto; flex-wrap: wrap; }
+.online-label { font-size: 10px; font-weight: 700; letter-spacing: 1px; color: var(--text3); }
+#onlineSlots  { display: flex; gap: 4px; flex-wrap: wrap; }
 
-/* 레이아웃 그리드 */
-.row1{display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center;}
-.row2{display:grid;grid-template-columns:1fr 220px;gap:12px;align-items:start;}
-.row3{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+/* ════════════════════════════════════════════════════════════
+   [CSS] 패스워드 모달
+   ════════════════════════════════════════════════════════════ */
+.modal-overlay {
+  display: none; position: fixed; inset: 0;
+  background: rgba(0,0,0,0.5); z-index: 1000;
+  align-items: center; justify-content: center;
+}
+.modal-box {
+  background: var(--bg2); border: 1px solid var(--border2);
+  border-radius: 10px; padding: 24px; width: 320px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+}
+.modal-title    { font-size: 13px; font-weight: 700; margin-bottom: 4px; }
+.modal-subtitle { font-size: 11px; color: var(--text3); margin-bottom: 16px; }
+.modal-error    { font-size: 11px; color: var(--danger); min-height: 16px; margin-bottom: 10px; }
+.modal-footer   { font-size: 11px; color: var(--success); min-height: 16px; text-align: center; margin-top: 12px; }
+.modal-btns     { display: flex; gap: 8px; }
+.modal-btns .btn-primary {
+  flex: 1; padding: 8px; font-size: 12px; font-weight: 700;
+  background: var(--accent); color: #fff; border: none; border-radius: 6px; cursor: pointer;
+}
+.modal-btns .btn-secondary {
+  flex: 1; padding: 8px; font-size: 12px; font-weight: 700;
+  background: var(--bg3); color: var(--text2);
+  border: 1px solid var(--border); border-radius: 6px; cursor: pointer;
+}
 
-::-webkit-scrollbar{width:4px;}
-::-webkit-scrollbar-track{background:transparent;}
-::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
-/* 모바일 반응형 */
-@media(max-width:600px){
-  #mainGrid{ grid-template-columns:1fr !important; }
-  #mainGrid > div:last-child{ order:3; }
+/* ════════════════════════════════════════════════════════════
+   [CSS] 중앙 좌패널 — 탭 + 덱 그리드
+   ════════════════════════════════════════════════════════════ */
+.tab-bar {
+  display: flex; margin-bottom: 10px;
+  border-radius: 6px; overflow: hidden; border: 1px solid var(--border2);
+}
+.tab-btn {
+  flex: 1; padding: 5px 0; font-size: 11px; font-weight: 700;
+  border: none; cursor: pointer; transition: all 0.15s;
+}
+.tab-btn.active-enemy { background: var(--accent); color: #fff; }
+.tab-btn.active-my    { background: #fffbe6; color: #7a6000; }
+.tab-btn.inactive     { background: var(--bg3); color: var(--text2); }
+
+.grid-card-my { background: #fffbe6; }
+
+.grid-header {
+  display: flex; align-items: center;
+  justify-content: space-between; margin-bottom: 8px;
+}
+.grid-header .sec-title { margin-bottom: 0; }
+
+.btn-grid { display: flex; flex-wrap: wrap; gap: 5px; }
+.btn-grid-empty { font-size: 11px; color: var(--text3); padding: 4px 0; }
+
+/* 추천 오더 결과 박스 */
+.order-result {
+  background: linear-gradient(135deg, rgba(156,39,176,0.05), rgba(26,110,245,0.05));
+  border: 1px solid rgba(26,110,245,0.15);
+  border-radius: 8px; padding: 16px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+}
+.order-label {
+  font-size: 10px; font-weight: 700;
+  letter-spacing: 3px; text-transform: uppercase; color: var(--pink);
+  margin-bottom: 12px;
+}
+.order-header {
+  display: flex; align-items: center;
+  justify-content: space-between; margin-bottom: 10px;
+}
+.order-header .order-label { margin-bottom: 0; }
+.order-hint { font-size: 10px; color: var(--text3); }
+
+.order-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.order-col  { display: flex; flex-direction: column; gap: 4px; }
+
+/* 추천 오더 카드 */
+.order-card {
+  cursor: pointer;
+  background: var(--bg3); border: 1px solid var(--border2);
+  border-radius: 6px; padding: 7px 10px; transition: all 0.1s;
+}
+.order-card:hover      { background: var(--bg4); }
+.order-card.selected   { border-color: rgba(30,210,100,0.5); background: rgba(30,210,100,0.08); }
+
+.order-card-row { display: flex; align-items: center; gap: 6px; }
+.order-num      { font-size: 9px; color: var(--text3); min-width: 12px; }
+.order-name     { font-size: 12px; font-weight: 600; flex: 1; }
+.order-power    { font-size: 10px; color: var(--text2); white-space: nowrap; }
+
+.order-radio {
+  width: 14px; height: 14px; border-radius: 50%;
+  border: 2px solid var(--border); background: transparent;
+  flex-shrink: 0; display: flex; align-items: center; justify-content: center;
+}
+.order-radio.checked {
+  border-color: rgba(30,210,100,0.8); background: rgba(30,210,100,0.8);
+}
+.order-radio.checked::after {
+  content: ''; width: 5px; height: 5px;
+  border-radius: 50%; background: #000;
+}
+
+.order-adv {
+  font-size: 11px; font-weight: 700;
+  padding: 2px 8px; border-radius: 4px; min-width: 20px; text-align: center;
+}
+.adv-win  { background: rgba(63,185,80,0.15);  color: var(--success); }
+.adv-draw { background: rgba(210,153,34,0.15); color: var(--warn); }
+.adv-lose { background: rgba(218,54,51,0.15);  color: var(--danger); }
+
+.dummy-inline {
+  margin-top: 5px; padding: 4px 8px;
+  background: rgba(255,215,0,0.07); border: 1px solid rgba(255,215,0,0.18);
+  border-radius: 4px; font-size: 10px;
+  display: flex; gap: 10px; align-items: center;
+}
+.dummy-impossible {
+  margin-top: 5px; padding: 4px 8px;
+  background: rgba(218,54,51,0.07); border: 1px solid rgba(218,54,51,0.2);
+  border-radius: 4px; font-size: 10px; color: var(--danger);
+}
+
+/* 상대 덱 정보 바 */
+.enemy-info-bar {
+  display: none; margin-top: 10px;
+  border-top: 1px solid var(--border2); padding-top: 8px;
+}
+.enemy-info-row {
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap; font-size: 11px;
+}
+.enemy-info-label { color: var(--text3); font-weight: 700; font-size: 10px; }
+
+/* 오토멘트 영역 */
+.ment-area {
+  display: none; margin-top: 6px;
+  border-top: 1px solid var(--border2); padding-top: 10px;
+}
+.ment-grid {
+  display: grid; grid-template-columns: 44px 1fr; gap: 5px; align-items: center;
+}
+.ment-key {
+  color: var(--text3); font-weight: 700; font-size: 10px; white-space: nowrap;
+}
+.ment-key-def { margin-top: 4px; }
+.ment-col { display: flex; flex-direction: column; gap: 4px; }
+.ment-row { display: flex; align-items: center; gap: 5px; }
+.ment-text {
+  flex: 1; color: var(--text2);
+  background: var(--bg3); border-radius: 4px;
+  padding: 4px 8px; font-size: 10px;
+}
+
+/* 출전 확정 행 */
+.confirm-row {
+  display: flex; gap: 6px; align-items: center;
+  margin-top: 10px; position: relative;
+}
+.confirm-inp-wrap { flex: 1; position: relative; }
+#confirmDD {
+  display: none; position: absolute; top: calc(100% + 4px); left: 0; right: 0;
+  background: var(--bg3); border: 1px solid var(--accent);
+  border-radius: 5px; z-index: 200; max-height: 160px; overflow-y: auto;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+/* ════════════════════════════════════════════════════════════
+   [CSS] 중앙 우패널 — 덱 소모 체크 / 소진현황
+   ════════════════════════════════════════════════════════════ */
+.deck-check-grid  { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.spent-cols-grid  { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+
+.defense-area {
+  background: rgba(30,140,69,0.04); border: 1px solid rgba(30,140,69,0.2);
+  border-radius: 6px; padding: 8px 10px;
+}
+.defense-area-en {
+  background: rgba(255,85,85,0.03); border-color: rgba(255,85,85,0.2);
+}
+.defense-area-title { font-size: 10px; font-weight: 700; margin-bottom: 5px; }
+.defense-area-title.my { color: var(--accent); }
+.defense-area-title.en { color: var(--red); }
+
+.def-dd-wrap { position: relative; margin-bottom: 5px; }
+.def-dd {
+  display: none; position: absolute; top: calc(100% + 4px); left: 0; right: 0;
+  background: var(--bg3); border: 1px solid var(--border);
+  border-radius: 5px; z-index: 100; max-height: 120px; overflow-y: auto;
+}
+.def-applied { margin-top: 4px; font-size: 10px; color: var(--text3); min-height: 14px; }
+
+/* 소진 현황 */
+.spent-item {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 4px 8px;
+  background: var(--bg3); border: 1px solid var(--border2);
+  border-radius: 4px; margin-bottom: 4px;
+}
+.spent-name {
+  font-weight: 500; font-size: 11px;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 80px;
+}
+.spent-right { display: flex; align-items: center; gap: 8px; }
+.spent-pips  { display: flex; gap: 2px; align-items: center; }
+.pip { width: 11px; height: 11px; border-radius: 2px; border: 1px solid var(--border); }
+.pip.on  { background: var(--danger); border-color: var(--danger); }
+.pip.off { background: var(--bg4); }
+.spent-label { font-size: 9px; color: var(--text3); margin-left: 4px; }
+
+/* ════════════════════════════════════════════════════════════
+   [CSS] 드롭다운 공통
+   ════════════════════════════════════════════════════════════ */
+.dd-item {
+  padding: 7px 10px; font-size: 12px; cursor: pointer;
+  display: flex; align-items: center; gap: 8px;
+  border-bottom: 1px solid var(--border2);
+}
+.dd-item:last-child { border-bottom: none; }
+.dd-item:hover { background: var(--bg4); }
+.dd-item-name  { flex: 1; font-weight: 500; }
+.dd-item-power { font-size: 10px; color: var(--text3); }
+
+/* ════════════════════════════════════════════════════════════
+   [CSS] 접속자 슬롯 칩
+   ════════════════════════════════════════════════════════════ */
+.slot-chip {
+  padding: 3px 10px; font-size: 10px; font-weight: 700;
+  border-radius: 20px; white-space: nowrap; transition: all 0.2s;
+}
+.slot-me     { background: var(--accent);               color: #fff;            border: 1px solid var(--accent); }
+.slot-online { background: rgba(30,140,69,0.15);        color: var(--success);  border: 1px solid rgba(30,140,69,0.4); }
+.slot-offline{ background: var(--bg3);                  color: var(--text3);    border: 1px solid var(--border); }
+
+/* ════════════════════════════════════════════════════════════
+   [CSS] 주문(오더) 우위 tag & 더미 tag
+   ════════════════════════════════════════════════════════════ */
+.dummy-tag    { background: var(--gold-dim);  border: 1px solid rgba(255,215,0,0.2); color: var(--gold);    font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 4px; font-family: 'Noto Sans KR',sans-serif; }
+.dummy-tag.ok { background: var(--green-dim); border-color: rgba(68,204,102,0.2);   color: var(--green); }
+
+/* ════════════════════════════════════════════════════════════
+   [CSS] 스크롤바
+   ════════════════════════════════════════════════════════════ */
+::-webkit-scrollbar       { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+/* ════════════════════════════════════════════════════════════
+   [CSS] 모바일 반응형 — 600px 이하
+   ════════════════════════════════════════════════════════════ */
+@media (max-width: 600px) {
+  .main-grid { grid-template-columns: 1fr !important; }
+  .main-grid .right-panel { order: 3; }
 }
 </style>
 </head>
 <body>
 <div class="wrap">
 
-<!-- ① 데이터 로드 -->
-<div class="card" style="padding:10px 16px;">
-  <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
-    <span style="font-size:10px;font-weight:700;letter-spacing:2px;color:var(--text3);text-transform:uppercase;white-space:nowrap;">데이터</span>
-    <label style="display:flex;align-items:center;gap:8px;background:var(--bg3);border:1px dashed var(--border);border-radius:6px;padding:6px 14px;cursor:pointer;position:relative;transition:all 0.2s;white-space:nowrap;" id="myUB" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="if(!this.classList.contains('ok'))this.style.borderColor='var(--border)'">
-      <input type="file" accept=".csv" style="position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;" onchange="loadCSV('my',this)">
-      <span style="font-size:16px;">🛡️</span>
-      <span id="myULabel" style="font-size:12px;font-weight:700;">우리 길드</span>
-      <span id="myUSub" style="font-size:10px;color:var(--text3);">CSV 선택</span>
-    </label>
-    <label style="display:flex;align-items:center;gap:8px;background:var(--bg3);border:1px dashed var(--border);border-radius:6px;padding:6px 14px;cursor:pointer;position:relative;transition:all 0.2s;white-space:nowrap;" id="enUB" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="if(!this.classList.contains('ok'))this.style.borderColor='var(--border)'">
-      <input type="file" accept=".csv" style="position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;" onchange="loadCSV('enemy',this)">
-      <span style="font-size:16px;">⚔️</span>
-      <span id="enULabel" style="font-size:12px;font-weight:700;">상대 길드</span>
-      <span id="enUSub" style="font-size:10px;color:var(--text3);">CSV 선택</span>
-    </label>
-    <!-- 메인급 기준 수치 입력 -->
-    <div style="display:flex;align-items:center;gap:6px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:4px 10px;">
-      <input id="mainThreshInp" type="number" min="1" placeholder="수치(만)"
-        style="width:90px;background:transparent;border:none;outline:none;font-size:11px;font-weight:700;color:var(--text);font-family:'Noto Sans KR',sans-serif;text-align:center;"
-        oninput="previewThresh(this.value)"
-        onkeydown="if(event.key==='Enter')saveThresh()">
-      <button onclick="saveThresh()" style="padding:2px 8px;font-size:10px;font-weight:700;background:var(--accent);color:#fff;border:none;border-radius:4px;cursor:pointer;white-space:nowrap;">확인</button>
-    </div>
-    <!-- 접속자 슬롯 -->
-    <div style="display:flex;align-items:center;gap:6px;margin-left:auto;flex-wrap:wrap;">
-      <span style="font-size:10px;font-weight:700;letter-spacing:1px;color:var(--text3);">접속자</span>
-      <div id="onlineSlots" style="display:flex;gap:4px;flex-wrap:wrap;"></div>
-      <button onclick="openPasswordModal()" style="padding:4px 12px;font-size:10px;font-weight:700;background:var(--bg3);color:var(--text2);border:1px solid var(--border);border-radius:5px;cursor:pointer;white-space:nowrap;">PW 입력</button>
-      <button onclick="fullReset()" style="padding:4px 12px;font-size:10px;font-weight:700;background:rgba(218,54,51,0.12);color:var(--danger);border:1px solid rgba(218,54,51,0.3);border-radius:5px;cursor:pointer;white-space:nowrap;">🗑 전체 리셋</button>
-    </div>
+<!-- ════════════════════════════════════════════════════════════
+     [HTML] 상단바 — 데이터 로드 / 메인급 기준 / 접속자 슬롯
+     ════════════════════════════════════════════════════════════ -->
+<div class="card topbar">
+  <span class="topbar-label">데이터</span>
+
+  <!-- 우리 길드 CSV 업로드 -->
+  <label class="upload-btn" id="myUB">
+    <input type="file" accept=".csv" onchange="loadCSV('my',this)">
+    <span class="upload-icon">🛡️</span>
+    <span class="upload-label" id="myULabel">우리 길드</span>
+    <span class="upload-sub"  id="myUSub">CSV 선택</span>
+  </label>
+
+  <!-- 상대 길드 CSV 업로드 -->
+  <label class="upload-btn" id="enUB">
+    <input type="file" accept=".csv" onchange="loadCSV('enemy',this)">
+    <span class="upload-icon">⚔️</span>
+    <span class="upload-label" id="enULabel">상대 길드</span>
+    <span class="upload-sub"  id="enUSub">CSV 선택</span>
+  </label>
+
+  <!-- 메인급 기준 수치 입력 -->
+  <div class="thresh-wrap">
+    <input id="mainThreshInp" type="number" min="1" placeholder="수치(만)"
+      class="thresh-inp"
+      oninput="previewThresh(this.value)"
+      onkeydown="if(event.key==='Enter')saveThresh()">
+    <button class="btn-sm-accent" onclick="saveThresh()">확인</button>
+  </div>
+
+  <!-- 접속자 슬롯 & 버튼 -->
+  <div class="online-wrap">
+    <span class="online-label">접속자</span>
+    <div id="onlineSlots"></div>
+    <button class="btn-sm-pw" onclick="openPasswordModal()">PW 입력</button>
+    <button class="btn-danger" onclick="fullReset()">🗑 전체 리셋</button>
   </div>
 </div>
 
-<!-- 패스워드 모달 -->
-<div id="pwModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:1000;align-items:center;justify-content:center;">
-  <div style="background:var(--bg2);border:1px solid var(--border2);border-radius:10px;padding:24px;width:320px;box-shadow:0 8px 32px rgba(0,0,0,0.3);">
-    <div style="font-size:13px;font-weight:700;margin-bottom:4px;">패스워드 입력</div>
-    <div style="font-size:11px;color:var(--text3);margin-bottom:16px;">올바른 패스워드를 입력하면 수정 권한이 부여됩니다</div>
-    <input class="inp" id="pwInput" type="password" placeholder="패스워드 입력..." style="margin-bottom:10px;" onkeydown="if(event.key==='Enter')submitPassword()">
-    <div id="pwError" style="font-size:11px;color:var(--danger);min-height:16px;margin-bottom:10px;"></div>
-    <div style="display:flex;gap:8px;">
-      <button onclick="submitPassword()" style="flex:1;padding:8px;font-size:12px;font-weight:700;background:var(--accent);color:#fff;border:none;border-radius:6px;cursor:pointer;">확인</button>
-      <button onclick="closePasswordModal()" style="flex:1;padding:8px;font-size:12px;font-weight:700;background:var(--bg3);color:var(--text2);border:1px solid var(--border);border-radius:6px;cursor:pointer;">취소</button>
+<!-- ════════════════════════════════════════════════════════════
+     [HTML] 패스워드 모달
+     ════════════════════════════════════════════════════════════ -->
+<div id="pwModal" class="modal-overlay">
+  <div class="modal-box">
+    <div class="modal-title">패스워드 입력</div>
+    <div class="modal-subtitle">올바른 패스워드를 입력하면 수정 권한이 부여됩니다</div>
+    <input class="inp" id="pwInput" type="password" placeholder="패스워드 입력..."
+      style="margin-bottom:10px;"
+      onkeydown="if(event.key==='Enter')submitPassword()">
+    <div id="pwError" class="modal-error"></div>
+    <div class="modal-btns">
+      <button class="btn-primary"   onclick="submitPassword()">확인</button>
+      <button class="btn-secondary" onclick="closePasswordModal()">취소</button>
     </div>
-    <div id="pwCurrentSlot" style="margin-top:12px;font-size:11px;color:var(--success);min-height:16px;text-align:center;"></div>
+    <div id="pwCurrentSlot" class="modal-footer"></div>
   </div>
 </div>
 
-<!-- ② 전체: 좌(출전자선택+추천오더) | 우(수성전+소진현황) -->
-<div id="mainGrid" style="display:grid;grid-template-columns:1fr 385px;gap:12px;align-items:start;">
+<!-- ════════════════════════════════════════════════════════════
+     [HTML] 메인 그리드 — 좌패널 + 우패널
+     ════════════════════════════════════════════════════════════ -->
+<div class="main-grid">
 
-  <!-- 좌: 상대 출전자 선택 + 추천 오더 -->
-  <div style="display:flex;flex-direction:column;gap:10px;">
+  <!-- ── 좌패널: 덱 선택 탭 + 추천 오더 ── -->
+  <div class="left-panel">
 
-    <div class="card" style="padding:12px 14px;" id="gridCard">
-      <!-- 탭 -->
-      <div style="display:flex;gap:0;margin-bottom:10px;border-radius:6px;overflow:hidden;border:1px solid var(--border2);">
-        <button id="tabEnemy" onclick="switchGridTab('enemy')"
-          style="flex:1;padding:5px 0;font-size:11px;font-weight:700;border:none;cursor:pointer;transition:all 0.15s;background:var(--accent);color:#fff;">
+    <!-- 탭 + 그리드 카드 -->
+    <div class="card card-md" id="gridCard">
+      <!-- 탭 버튼 -->
+      <div class="tab-bar">
+        <button id="tabEnemy" class="tab-btn active-enemy" onclick="switchGridTab('enemy')">
           ⚔️ 상대 덱 선택
         </button>
-        <button id="tabMy" onclick="switchGridTab('my')"
-          style="flex:1;padding:5px 0;font-size:11px;font-weight:700;border:none;cursor:pointer;transition:all 0.15s;background:var(--bg3);color:var(--text2);">
+        <button id="tabMy" class="tab-btn inactive" onclick="switchGridTab('my')">
           🛡️ 우리 길드 현황
         </button>
       </div>
 
       <!-- 상대 탭 내용 -->
       <div id="tabEnemyContent">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+        <div class="grid-header">
           <div class="sec-title" style="margin-bottom:0;">상대 출전자 선택</div>
           <div style="display:flex;gap:6px;align-items:center;">
             <span id="ddLabel" style="font-size:11px;color:var(--accent);font-weight:700;"></span>
             <button class="btn btn-ghost" onclick="clearSelection()" style="font-size:10px;">초기화</button>
           </div>
         </div>
-        <div id="enemyBtnGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:5px;">
-          <div style="font-size:11px;color:var(--text3);padding:4px 0;">상대 길드 CSV를 로드하면 여기에 선택 버튼이 나타납니다</div>
+        <div id="enemyBtnGrid" class="btn-grid">
+          <div class="btn-grid-empty">상대 길드 CSV를 로드하면 여기에 선택 버튼이 나타납니다</div>
         </div>
       </div>
 
       <!-- 우리 길드 탭 내용 -->
       <div id="tabMyContent" style="display:none;">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+        <div class="grid-header">
           <div class="sec-title" style="margin-bottom:0;">우리 길드 현황</div>
-          <span id="myGridLabel" style="font-size:11px;color:var(--accent);font-weight:700;"></span>
         </div>
-        <div id="myBtnGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:5px;">
-          <div style="font-size:11px;color:var(--text3);padding:4px 0;">우리 길드 CSV를 로드하면 여기에 표시됩니다</div>
+        <div id="myBtnGrid" class="btn-grid">
+          <div class="btn-grid-empty">우리 길드 CSV를 로드하면 여기에 표시됩니다</div>
         </div>
       </div>
     </div>
 
-    <div id="orderArea" class="card">
-        <div style="display:flex;align-items:center;justify-content:center;height:80px;color:var(--text3);font-size:12px;">상대 출전자를 선택하고 분석하세요</div>
+    <!-- 추천 오더 결과 -->
+    <div class="card">
+      <div id="orderArea">
+        <div style="display:flex;align-items:center;justify-content:center;height:80px;color:var(--text3);font-size:12px;">
+          상대 출전자를 선택하고 분석하세요
+        </div>
+      </div>
     </div>
 
-  </div>
+  </div><!-- /left-panel -->
 
-  <!-- 우: 수성전 + 소진현황 -->
-  <div style="display:flex;flex-direction:column;gap:10px;">
+  <!-- ── 우패널: 덱 소모 체크 + 소진현황 ── -->
+  <div class="right-panel">
 
-    <!-- 수성전 강제출전: 우리/상대 나란히 -->
-    <div class="card" style="padding:12px 14px;">
+    <!-- 덱 소모 수동 체크 -->
+    <div class="card card-md">
       <div class="sec-title" style="color:var(--success);margin-bottom:8px;">덱 소모 수동 체크</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+      <div class="deck-check-grid">
+
         <!-- 우리 길드 -->
-        <div class="defense-area" style="padding:8px 10px;">
-          <div style="font-size:10px;font-weight:700;color:var(--accent);margin-bottom:5px;">🛡️ 우리 길드</div>
-          <div style="position:relative;margin-bottom:5px;">
-            <input class="inp" id="defInpMy" placeholder="이름 검색..." oninput="srchDefMy(this.value)" autocomplete="off" style="font-size:11px;padding:5px 8px;">
-            <div id="defDDMy" style="display:none;position:absolute;top:calc(100%+4px);left:0;right:0;background:var(--bg3);border:1px solid var(--border);border-radius:5px;z-index:100;max-height:120px;overflow-y:auto;"></div>
+        <div class="defense-area">
+          <div class="defense-area-title my">🛡️ 우리 길드</div>
+          <div class="def-dd-wrap">
+            <input class="inp" id="defInpMy" placeholder="이름 검색..."
+              oninput="srchDefMy(this.value)" autocomplete="off"
+              style="font-size:11px;padding:5px 8px;">
+            <div id="defDDMy" class="def-dd"></div>
           </div>
           <button class="btn btn-success" style="width:100%;font-size:10px;padding:5px;" onclick="applyDefenseMy()">✓ 적용</button>
-          <div style="margin-top:4px;font-size:10px;color:var(--text3);min-height:14px;" id="defAppliedMy"></div>
+          <div class="def-applied" id="defAppliedMy"></div>
         </div>
+
         <!-- 상대 길드 -->
-        <div class="defense-area" style="padding:8px 10px;border-color:rgba(255,85,85,0.2);background:rgba(255,85,85,0.03);">
-          <div style="font-size:10px;font-weight:700;color:var(--red);margin-bottom:5px;">⚔️ 상대 길드</div>
-          <div style="position:relative;margin-bottom:5px;">
-            <input class="inp" id="defInpEn" placeholder="이름 검색..." oninput="srchDefEn(this.value)" autocomplete="off" style="font-size:11px;padding:5px 8px;">
-            <div id="defDDEn" style="display:none;position:absolute;top:calc(100%+4px);left:0;right:0;background:var(--bg3);border:1px solid var(--border);border-radius:5px;z-index:100;max-height:120px;overflow-y:auto;"></div>
+        <div class="defense-area defense-area-en">
+          <div class="defense-area-title en">⚔️ 상대 길드</div>
+          <div class="def-dd-wrap">
+            <input class="inp" id="defInpEn" placeholder="이름 검색..."
+              oninput="srchDefEn(this.value)" autocomplete="off"
+              style="font-size:11px;padding:5px 8px;">
+            <div id="defDDEn" class="def-dd"></div>
           </div>
-          <button class="btn" onclick="applyDefenseEn()" style="width:100%;font-size:10px;padding:5px;background:rgba(255,85,85,0.15);color:var(--red);border:1px solid rgba(255,85,85,0.3);border-radius:5px;font-weight:700;cursor:pointer;">✓ 적용</button>
-          <div style="margin-top:4px;font-size:10px;color:var(--text3);min-height:14px;" id="defAppliedEn"></div>
+          <button class="btn btn-danger" style="width:100%;border-radius:5px;" onclick="applyDefenseEn()">✓ 적용</button>
+          <div class="def-applied" id="defAppliedEn"></div>
         </div>
+
       </div>
     </div>
 
-    <!-- 소진현황: 우리/상대 나란히 -->
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
-      <div class="card" style="padding:10px 12px;">
-        <div class="sec-title" style="margin-bottom:6px;font-size:9px;">🛡️ 우리 소진</div>
+    <!-- 소진현황: 우리 / 상대 나란히 -->
+    <div class="spent-cols-grid">
+      <div class="card card-sm">
+        <div class="sec-title sec-title-sm">🛡️ 우리 소진</div>
         <div id="mySpent"><div class="no-data">출전 확정 시 표시</div></div>
       </div>
-      <div class="card" style="padding:10px 12px;">
-        <div class="sec-title" style="margin-bottom:6px;font-size:9px;">⚔️ 상대 소진</div>
+      <div class="card card-sm">
+        <div class="sec-title sec-title-sm">⚔️ 상대 소진</div>
         <div id="enSpent"><div class="no-data">출전 확정 시 표시</div></div>
       </div>
     </div>
 
-  </div>
-</div>
+  </div><!-- /right-panel -->
 
+</div><!-- /main-grid -->
 </div><!-- /wrap -->
 
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
-<script>
-const firebaseConfig = {
-  apiKey: "AIzaSyCIBF8ACLZ724INQXTtKdr1iV4nOW54Kqo",
-  authDomain: "inter-order.firebaseapp.com",
-  databaseURL: "https://inter-order-default-rtdb.firebaseio.com",
-  projectId: "inter-order",
-  storageBucket: "inter-order.firebasestorage.app",
-  messagingSenderId: "951121899834",
-  appId: "1:951121899834:web:338531706d7b5672fc2003"
-};
-firebase.initializeApp(firebaseConfig);
-const db = firebase.database();
 
-// ── Firebase 동기화 함수 ──
-function fbSet(path, value){ return db.ref(path).set(value); }
-
-function fbWatch(path, cb){
-  db.ref(path).on("value", snap => cb(snap.val()));
-}
-
-function fbTransaction(path, updateFn){
-  return db.ref(path).transaction(updateFn);
-}
-
-// ── 실시간 리스너 초기화 ──
-function initFirebaseListeners(){
-  // 우리 길드 데이터
-  fbWatch('myGuild', val => {
-    if(!val) return;
-    myGuild = val;
-    renderMySpent();
-    const ub=document.getElementById('myUB');
-    ub.style.borderStyle='solid'; ub.style.borderColor='var(--success)';
-    const name = myGuildName || '';
-    if(name){ document.getElementById('myULabel').textContent=''; document.getElementById('myUSub').textContent=`${name} (${myGuild.length}명)`; }
-    else { document.getElementById('myULabel').textContent='우리 길드'; document.getElementById('myUSub').textContent=`✓ ${myGuild.length}명`; }
-    document.getElementById('myUSub').style.color='var(--success)';
-  });
-  // 상대 길드 데이터
-  fbWatch('enemyGuild', val => {
-    if(!val) return;
-    enemyGuild = val;
-    buildEnemyGrid();
-    renderEnSpent();
-    const ub=document.getElementById('enUB');
-    ub.style.borderStyle='solid'; ub.style.borderColor='var(--success)';
-    const name = enemyGuildName || '';
-    if(name){ document.getElementById('enULabel').textContent=''; document.getElementById('enUSub').textContent=`${name} (${enemyGuild.length}명)`; }
-    else { document.getElementById('enULabel').textContent='상대 길드'; document.getElementById('enUSub').textContent=`✓ ${enemyGuild.length}명`; }
-    document.getElementById('enUSub').style.color='var(--success)';
-  });
-  // 길드 이름
-  fbWatch('myGuildName', val => {
-    if(val){
-      myGuildName=val;
-      if(myGuild.length){
-        document.getElementById('myULabel').textContent='';
-        document.getElementById('myUSub').textContent=`${val} (${myGuild.length}명)`;
-        document.getElementById('myUSub').style.color='var(--success)';
-      }
-    }
-  });
-  fbWatch('enemyGuildName', val => {
-    if(val){
-      enemyGuildName=val;
-      if(enemyGuild.length){
-        document.getElementById('enULabel').textContent='';
-        document.getElementById('enUSub').textContent=`${val} (${enemyGuild.length}명)`;
-        document.getElementById('enUSub').style.color='var(--success)';
-      }
-    }
-  });
-  // 우리 소진 현황
-  fbWatch('mainThreshold', val => {
-    mainThreshold = val || 0;
-    const inp = document.getElementById('mainThreshInp');
-    if(inp && val) inp.value = val;
-    buildEnemyGrid();
-  });
-  fbWatch('mySpentMap', val => {
-    mySpentMap = val || {};
-    renderMySpent();
-    if(lastOrders.length) renderOrderResult();
-  });
-  // 상대 소진 현황
-  fbWatch('enSpentMap', val => {
-    enSpentMap = val || {};
-    renderEnSpent();
-    buildEnemyGrid();
-  });
-  // 패스워드 목록
-  fbWatch('passwords', val => {
-    passwords = val || {};
-  });
-  // 슬롯 이름
-  fbWatch('slots', val => {
-    slotNames = val || {slot1:'길드장',slot2:'부길드장1',slot3:'부길드장2',slot4:'외교역',slot5:'군사',slot6:'행정역',guest1:'게스트1',guest2:'게스트2',guest3:'게스트3'};
-    renderOnlineSlots();
-  });
-  // 온라인 유저
-  fbWatch('onlineUsers', val => {
-    onlineUsers = val || {};
-    renderOnlineSlots();
-  });
-  // 선택된 상대
-  fbWatch('selectedEnemy', val => {
-    selectedEnemy = val || null;
-    if(selectedEnemy){
-      const attrIcon={red:'🔴',blue:'🔵',green:'🟢'};
-      document.getElementById('ddLabel').innerHTML=`선택: ${selectedEnemy.name} &nbsp;${attrIcon[selectedEnemy.attr]} &nbsp;<span style="font-family:'Noto Sans KR',sans-serif;font-size:10px;">메인 ${selectedEnemy.mainPower.toFixed(1)}만 &nbsp;서브 ${selectedEnemy.subPower.toFixed(1)}만</span>`;
-      document.getElementById('ddLabel').style.color='var(--accent)';
-      analyze();
-    } else {
-      document.getElementById('ddLabel').textContent='';
-      document.getElementById('orderArea').innerHTML='<div style="display:flex;align-items:center;justify-content:center;height:80px;color:var(--text3);font-size:12px;">상대 출전자를 선택하고 분석하세요</div>';
-    }
-    buildEnemyGrid();
-  });
-}
-
-let myGuild=[], enemyGuild=[];
-let myGuildName='', enemyGuildName='';
-// 권한/접속자
-// ── 핵심 수치 상수 (여기서만 수정하면 전체 반영) ──
-const ATTR_ADV  = 1.20;  // 우세 상성 배율
-const ATTR_SAME = 1.0;   // 동일 상성 배율
-const ATTR_DIS  = 0.8;   // 약세 상성 배율
-const SAFETY    = 0.87;  // 안전기준 (상대를 내 실효전력의 n% 이하로)
-const DUMMY_MAX = 480;   // 더미 최대 인원 (완전약화 기준)
-const BAND_SIZE = 6;     // 1반 인원
-
-let passwords={}, slotNames={}, onlineUsers={};
-let mySlot=null; // 내가 로그인한 슬롯 키 (null이면 읽기전용)
-let mySessionId=Math.random().toString(36).slice(2,10); // 브라우저 세션 고유ID
-// spentMap: name → {count, updatedAt}
-let mySpentMap={}, enSpentMap={};
-
-function spentCount(map, name){ const e=map[name]; if(!e)return 0; return typeof e==='object'?e.count||0:e; }
-function setSpent(path, name, newCount){
-  if(newCount<=0){ db.ref(`${path}/${name}`).remove(); return; }
-  db.ref(`${path}/${name}`).set({count:newCount, updatedAt:Date.now()});
-}
-let selectedEnemy=null;
-let selectedOrderIdx=null;
-let lastOrders=[];
-let pendingCustom='';
-let mainThreshold=0; // 메인급 기준 전투력 (만 단위 저장, 0이면 미설정)
-let defPending=null;
-
-// ── CSV ──
-function loadCSV(type,input){
-  const file=input.files[0]; if(!file)return;
-  if(!requireEdit()){ input.value=''; return; }
-  const r=new FileReader();
-  r.onload=e=>{
-    const {list,guildName}=parseCSV(e.target.result);
-    if(type==='my'){
-      myGuildName=guildName;
-      fbSet('myGuild', list);
-      fbSet('myGuildName', guildName);
-      fbSet('mySpentMap', {});
-    } else {
-      enemyGuildName=guildName;
-      fbSet('enemyGuild', list);
-      fbSet('enemyGuildName', guildName);
-      fbSet('enSpentMap', {});
-    }
-  };
-  r.readAsText(file,'utf-8');
-}
-
-function parseCSV(text){
-  const lines=text.trim().split('\n').filter(l=>l.trim());
-  if(!lines.length)return{list:[],guildName:''};
-  const delim=lines[0].includes('\t')?'\t':',';
-  // C1 (index 2) 에서 길드 이름 추출
-  const firstCols=lines[0].split(delim).map(c=>c.trim().replace(/"/g,''));
-  const guildName=firstCols[2]||'';
-  const res=[];
-  for(let i=0;i<lines.length;i++){
-    const cols=lines[i].split(delim).map(c=>c.trim().replace(/"/g,''));
-    const nameVal=(cols[2]||'').trim();
-    if(!nameVal)continue;
-    const up=nameVal.toUpperCase();
-    // 스킵: 체크박스값, 헤더, 길드명 셀, 날짜/숫자만 있는 행
-    if(up==='FALSE'||up==='TRUE'||up==='유저'||nameVal.startsWith('<')||nameVal.startsWith('20'))continue;
-    // 이름이 한글/영문/숫자 조합인지 확인 (순수 숫자면 스킵)
-    if(/^\d+$/.test(nameVal))continue;
-    const bandPower=parsePow(cols[3]);
-    const mainPower=parsePow(cols[6]);
-    const subPower=parsePow(cols[10]);
-    const attr=parseAttr(cols[5]||'');
-    const subAttr=parseAttr(cols[9]||'') || attr;
-    // bandPower나 mainPower 중 하나라도 있으면 포함
-    if(!bandPower&&!mainPower)continue;
-    const effPower=mainPower+subPower*0.35;
-    res.push({name:nameVal,bandPower,mainPower,subPower,effPower,attr,subAttr});
-  }
-  return{list:res.sort((a,b)=>b.effPower-a.effPower),guildName};
-}
-
-function parsePow(s){
-  return parseFloat((s||'0').replace(/만/g,'').replace(/,/g,'').trim())||0;
-}
-
-function parseAttr(s){
-  const v=(s||'').trim();
-  if(v==='화')return'red';
-  if(v==='수')return'blue';
-  if(v==='목')return'green';
-  // 혹시 이모지나 영문으로 들어올 경우 대비
-  if(v.includes('🔴')||v.toLowerCase().includes('red'))return'red';
-  if(v.includes('🔵')||v.toLowerCase().includes('blue'))return'blue';
-  if(v.includes('🟢')||v.toLowerCase().includes('green'))return'green';
-  return'red';
-}
-function fi(hdrs,cands){for(const c of cands){const i=hdrs.findIndex(h=>h.includes(c));if(i>=0)return i;}return 0;}
-function splitLine(line){const res=[];let cur='',inQ=false;for(const ch of line){if(ch==='"')inQ=!inQ;else if(ch===','&&!inQ){res.push(cur);cur='';}else cur+=ch;}res.push(cur);return res;}
-
-// ── 메인급 기준 수치 저장 ──
-function saveThresh(){
-  if(!requireEdit()) return;
-  const val = parseInt(document.getElementById('mainThreshInp').value||'0');
-  if(!val||val<=0){ alert('수치를 입력해주세요 (예: 500 = 500만)'); return; }
-  mainThreshold = val;
-  fbSet('mainThreshold', val);
-  buildEnemyGrid();
-}
-function previewThresh(val){
-  // 입력 중 실시간 미리보기는 하지 않고 확인 버튼 눌렀을 때만 반영
-}
-
-// ── 탭 전환 ──
-function switchGridTab(tab){
-  const isEnemy = tab === 'enemy';
-  document.getElementById('tabEnemyContent').style.display = isEnemy ? 'block' : 'none';
-  document.getElementById('tabMyContent').style.display   = isEnemy ? 'none'  : 'block';
-
-  const tE = document.getElementById('tabEnemy');
-  const tM = document.getElementById('tabMy');
-  const card = document.getElementById('gridCard');
-
-  if(isEnemy){
-    tE.style.background = 'var(--accent)'; tE.style.color = '#fff';
-    tM.style.background = 'var(--bg3)';    tM.style.color = 'var(--text2)';
-    card.style.background = '';
-    const lbl=document.getElementById('myGridLabel'); if(lbl) lbl.innerHTML='';
-  } else {
-    tM.style.background = '#fffbe6'; tM.style.color = '#7a6000';
-    tE.style.background = 'var(--bg3)'; tE.style.color = 'var(--text2)';
-    card.style.background = '#fffbe6';
-    buildMyGrid();
-  }
-}
-
-// ── 우리 길드 현황 그리드 ──
-function buildMyGrid(){
-  const grid = document.getElementById('myBtnGrid');
-  if(!myGuild.length){
-    grid.innerHTML='<div style="font-size:11px;color:var(--text3);padding:4px 0;">우리 길드 CSV를 로드하면 여기에 표시됩니다</div>';
-    return;
-  }
-  const attrIcon={red:'🔴',blue:'🔵',green:'🟢'};
-  grid.innerHTML=myGuild.map(m=>{
-    const cnt=spentCount(mySpentMap,m.name);
-    const spent=cnt>=2;
-    const once=cnt===1;
-    const isMain=mainThreshold>0 && m.effPower>=mainThreshold;
-    const subIcon=m.subPower>0?attrIcon[m.subAttr||m.attr]:'';
-
-    let bg, border, opacity, textColor, textDecor;
-    textDecor = spent ? 'line-through' : 'none';
-
-    if(isMain){
-      if(spent){
-        bg='rgba(88,166,255,0.08)'; border='rgba(88,166,255,0.2)'; opacity='0.45'; textColor='var(--text3)';
-      } else if(once){
-        bg='rgba(88,166,255,0.18)'; border='var(--warn)'; opacity='0.85'; textColor='var(--text)';
-      } else {
-        bg='rgba(88,166,255,0.13)'; border='rgba(88,166,255,0.5)'; opacity='1'; textColor='var(--text)';
-      }
-    } else {
-      if(spent){
-        bg='var(--bg3)'; border='rgba(255,255,255,0.15)'; opacity='0.4'; textColor='var(--text3)';
-      } else if(once){
-        bg='var(--bg3)'; border='rgba(255,255,255,0.6)'; opacity='0.8'; textColor='var(--text2)';
-      } else {
-        bg='var(--bg3)'; border='var(--border2)'; opacity='1'; textColor='var(--text)';
-      }
-    }
-
-    const dispName=m.name.length>5?m.name.slice(0,5)+'…':m.name;
-    const subTip = m.subPower>0 ? ` / 서브 ${m.subPower.toFixed(1)}만` : '';
-    const tooltip = `${m.name}\n메인 ${m.mainPower.toFixed(1)}만${subTip}`;
-    const subTipStr = m.subPower>0 ? ` &nbsp;${attrIcon[m.subAttr||m.attr]||''} ${m.subPower.toFixed(1)}만` : '';
-    const labelHtml = `${m.name} &nbsp;${attrIcon[m.attr]||''} ${m.mainPower.toFixed(1)}만${subTipStr}`;
-    return `<div title="${tooltip}" onclick="document.getElementById('myGridLabel').innerHTML='${labelHtml}'" style="width:130px;height:28px;background:${bg};border:1px solid ${border};border-radius:5px;
-      color:${textColor};font-family:'Noto Sans KR',sans-serif;font-size:11px;font-weight:500;
-      opacity:${opacity};display:flex;align-items:center;justify-content:center;gap:3px;padding:0 6px;
-      white-space:nowrap;overflow:hidden;text-decoration:${textDecor};cursor:pointer;">
-      <span>${attrIcon[m.attr]}</span>
-      ${subIcon?`<span style="font-size:9px;">${subIcon}</span>`:''}
-      <span>${dispName}</span>
-      ${once?`<span style="font-size:9px;color:var(--warn);margin-left:2px;">1회</span>`:''}
-    </div>`;
-  }).join('');
-}
-
-// ── 상대 출전자 버튼 그리드 ──
-function buildEnemyGrid(){
-  const grid=document.getElementById('enemyBtnGrid');
-  if(!enemyGuild.length){
-    grid.innerHTML='<div style="font-size:11px;color:var(--text3);padding:8px 0;">상대 길드 CSV를 로드하면 여기에 선택 버튼이 나타납니다</div>';
-    return;
-  }
-  const attrIcon={red:'🔴',blue:'🔵',green:'🟢'};
-  grid.innerHTML=enemyGuild.map(m=>{
-    const cnt=spentCount(enSpentMap,m.name);
-    const spent=cnt>=2;
-    const once=cnt===1;
-    const isSelected=selectedEnemy&&selectedEnemy.name===m.name;
-    const subIcon=m.subPower>0?attrIcon[m.subAttr||m.attr]:'';
-    // 메인급 판별 (threshold 설정된 경우에만)
-    const isMain = mainThreshold>0 && m.effPower>=mainThreshold;  // effPower 이미 만 단위
-
-    let bg, border, opacity, textColor, textDecor;
-    textDecor = spent ? 'line-through' : 'none';
-
-    if(isSelected){
-      // 선택 상태: 초록 톤 (메인급 파란톤과 구분)
-      bg = 'rgba(30,210,100,0.22)';
-      border = 'rgba(30,210,100,0.8)';
-      opacity = '1';
-      textColor = 'var(--text)';
-    } else if(isMain){
-      // 메인급
-      if(spent){
-        bg = 'rgba(88,166,255,0.08)';   // 2회소진: 짙은배경 50% 컬러
-        border = 'rgba(88,166,255,0.2)';
-        opacity = '0.45';
-        textColor = 'var(--text3)';
-      } else if(once){
-        bg = 'rgba(88,166,255,0.18)';   // 1회소진: 짙은배경+warn보더
-        border = 'var(--warn)';
-        opacity = '0.85';
-        textColor = 'var(--text)';
-      } else {
-        bg = 'rgba(88,166,255,0.13)';   // 미소진: 짙은배경
-        border = 'rgba(88,166,255,0.5)';
-        opacity = '1';
-        textColor = 'var(--text)';
-      }
-    } else {
-      // 더미급 (기존 스타일 유지)
-      if(spent){
-        bg = 'var(--bg3)';
-        border = 'rgba(255,255,255,0.15)'; // 더미급 2회소진: 흰색 보더
-        opacity = '0.4';
-        textColor = 'var(--text3)';
-      } else if(once){
-        bg = 'var(--bg3)';
-        border = 'rgba(255,255,255,0.6)'; // 더미급 1회소진: 흰색 보더
-        opacity = '0.8';
-        textColor = 'var(--text2)';
-      } else {
-        bg = 'var(--bg3)';
-        border = 'var(--border2)';
-        opacity = '1';
-        textColor = 'var(--text)';
-      }
-    }
-
-    const dispName = m.name.length > 5 ? m.name.slice(0,5)+'...' : m.name;
-    return `<button onclick="selectEnemy('${m.name}')"
-      style="width:130px;height:28px;background:${bg};border:1px solid ${border};border-radius:5px;
-      color:${textColor};font-family:'Noto Sans KR',sans-serif;font-size:11px;font-weight:500;
-      cursor:${spent?'not-allowed':'pointer'};opacity:${opacity};
-      display:flex;align-items:center;justify-content:center;gap:3px;padding:0 6px;
-      white-space:nowrap;overflow:hidden;transition:all 0.1s;text-decoration:${textDecor};"
-      ${spent?'disabled':''}>
-      <span>${attrIcon[m.attr]}</span>
-      ${subIcon?`<span style="font-size:9px;">${subIcon}</span>`:''}
-      <span>${dispName}</span>
-      ${once?`<span style="font-size:9px;color:var(--warn);margin-left:2px;">1회</span>`:''}
-    </button>`;
-  }).join('');
-}
-
-function selectEnemy(name){
-  const m=enemyGuild.find(x=>x.name===name);
-  if(!m||spentCount(enSpentMap,m.name)>=2)return;
-  fbSet('selectedEnemy', m);
-}
-
-
-document.addEventListener('click',e=>{
-  if(!e.target.closest('#defInpMy')&&!e.target.closest('#defDDMy'))document.getElementById('defDDMy').style.display='none';
-  if(!e.target.closest('#defInpEn')&&!e.target.closest('#defDDEn'))document.getElementById('defDDEn').style.display='none';
-  const cdd=document.getElementById('confirmDD'); if(cdd&&!e.target.closest('#confirmInp')&&!e.target.closest('#confirmDD'))cdd.style.display='none';
-});
-
-function clearSelection(){
-  fbSet('selectedEnemy', null);
-  selectedOrderIdx=null; lastOrders=[];
-  pendingCustom='';
-  const inp=document.getElementById('confirmInp');
-  if(inp) inp.value='';
-}
-
-// ── 분석 ──
-function adv(mine,theirs){
-  const wins={red:'green',green:'blue',blue:'red'};
-  const loses={red:'blue',green:'red',blue:'green'};
-  if(wins[mine]===theirs)return 1;
-  if(loses[mine]===theirs)return -1;
-  return 0;
-}
-
-function analyze(){
-  const ra=document.getElementById('orderArea');
-  if(!myGuild.length){ra.innerHTML='<div style="color:var(--text3);font-size:12px;padding:20px;text-align:center;">우리 길드 CSV를 먼저 불러오세요</div>';return;}
-  if(!selectedEnemy){ra.innerHTML='<div style="color:var(--text3);font-size:12px;padding:20px;text-align:center;">상대 출전자를 선택하세요</div>';return;}
-
-  const ep=selectedEnemy.effPower;
-  const eAttr=selectedEnemy.attr;
-
-  // 소진 2회 미만 가용 멤버
-  const avail=myGuild.filter(m=>spentCount(mySpentMap,m.name)<2);
-
-  // 상성 반영 실효전력으로 정렬
-  // 실제 상성배율: 우위 ×1.25 / 동일 ×1.0 / 약세 ×0.8
-  // 안전마진 90%: 상대 전력이 내 실효전력의 90% 이하여야 "이길 수 있음"
-  const ATK_MULT = {1: ATTR_ADV, 0: ATTR_SAME, '-1': ATTR_DIS};
-  const scored=avail.map(m=>{
-    const a=adv(m.attr,eAttr);
-    const mult=ATK_MULT[String(a)];
-    const eff=m.effPower*mult;   // 실제 상성배율 적용 실효전력
-    const ratio=eff/(ep||1);
-    return{...m,eff,ratio,advVal:a,mult};
-  }).sort((a,b)=>{
-    // 상대 전력 ep가 내 실효전력의 90% 이하 → "이길 수 있음"
-    const aOk=ep<=a.eff*SAFETY, bOk=ep<=b.eff*SAFETY;
-    if(aOk&&!bOk)return -1; if(!aOk&&bOk)return 1;
-    if(aOk&&bOk)return a.effPower-b.effPower;
-    return b.eff-a.eff;
-  });
-
-  // 상위 6~8명 (가용 인원 적으면 전부)
-  const topN=scored.slice(0,Math.min(8,scored.length));
-  lastOrders=topN.map(m=>({member:m,dummy:calcDummy(ep,m.effPower,m.advVal)}));
-  selectedOrderIdx=null;
-  renderOrderResult();
-}
-
-function calcDummy(ep,mp,advVal){
-  // 실제 상성배율: 우위 ×1.25 / 동일 ×1.0 / 약세 ×0.8
-  // 안전마진 90%: 상대 전력을 내 실효전력의 90% 이하로 약화시켜야 이김
-  const mult = advVal===1 ? ATTR_ADV : advVal===-1 ? ATTR_DIS : ATTR_SAME;
-  const effMp = mp * mult;        // 내 실효전력
-  const target = effMp * SAFETY;  // 상대를 이 수준까지 약화시켜야 함
-  if(!ep || ep <= target) return null;  // 이미 충족 → 더미 불필요
-  const weaken = 1-(target/ep);   // 약화 비율
-  const needed = Math.ceil(weaken*DUMMY_MAX);
-  if(needed>480)return{impossible:true};
-  const n50=Math.min(Math.ceil(weaken/0.5*(DUMMY_MAX/2)),DUMMY_MAX/2);
-  return{impossible:false,needed,bands:Math.ceil(needed/6),weaken,n50,b50:Math.ceil(n50/6)};
-}
-
-function renderOrderResult(){
-  if(!lastOrders.length)return;
-  const attrIcon={red:'🔴',blue:'🔵',green:'🟢'};
-  const attrCls={red:'ab-red',blue:'ab-blue',green:'ab-green'};
-
-  // 1~4위 / 5~8위 두 컬럼으로 분리
-  const left=lastOrders.slice(0,4);
-  const right=lastOrders.slice(4,8);
-
-  function makeCard(o,i){
-    const m=o.member, d=o.dummy;
-    const cnt=spentCount(mySpentMap,m.name);
-    let advCls='adv-draw',advTxt='동';
-    if(m.ratio>=1.1){advCls='adv-win';advTxt='우';}
-    else if(m.ratio<0.85){advCls='adv-lose';advTxt='열';}
-    const advMark=m.advVal===1?'▲':m.advVal===-1?'▼':'';
-    const advColor=m.advVal===1?'var(--success)':m.advVal===-1?'var(--danger)':'var(--text3)';
-    const cntBadge=cnt===1?`<span style="font-size:9px;color:var(--warn);margin-left:2px;">1회</span>`:'';
-    const sel=selectedOrderIdx===i;
-    const dispName=m.name.length>5?m.name.slice(0,5)+'…':m.name;
-
-    // 더미 표시: 인라인 (선택된 행에만 바로 아래 펼침)
-    let dummyRow='';
-    if(sel && d && !d.impossible){
-      dummyRow=`<div style="margin-top:5px;padding:4px 8px;background:rgba(255,215,0,0.07);border:1px solid rgba(255,215,0,0.18);border-radius:4px;font-size:10px;display:flex;gap:10px;align-items:center;">
-        <span style="color:var(--gold);font-weight:700;">💀</span>
-        <span style="color:var(--text2);">약화 <strong style="color:var(--gold);">${Math.round(d.weaken*100)}%</strong></span>
-        <span style="color:var(--text2);">더미 <strong style="color:var(--gold);">${d.needed}명 (~${d.bands}반)</strong></span>
-      </div>`;
-    } else if(sel && d?.impossible){
-      dummyRow=`<div style="margin-top:5px;padding:4px 8px;background:rgba(218,54,51,0.07);border:1px solid rgba(218,54,51,0.2);border-radius:4px;font-size:10px;color:var(--danger);">⚠️ 더미로 처리 불가</div>`;
-    }
-
-    const cardBg=sel?'rgba(30,210,100,0.08)':'var(--bg3)';
-    const cardBorder=sel?'rgba(30,210,100,0.5)':'var(--border2)';
-
-    return `<div onclick="selectOrder(${i})" style="cursor:pointer;background:${cardBg};border:1px solid ${cardBorder};border-radius:6px;padding:7px 10px;transition:all 0.1s;"
-      onmouseover="if(${!sel})this.style.background='var(--bg4)'" onmouseout="this.style.background='${cardBg}'">
-      <div style="display:flex;align-items:center;gap:6px;">
-        <div style="width:14px;height:14px;border-radius:50%;border:2px solid ${sel?'rgba(30,210,100,0.8)':'var(--border)'};background:${sel?'rgba(30,210,100,0.8)':'transparent'};flex-shrink:0;display:flex;align-items:center;justify-content:center;">
-          ${sel?'<div style="width:5px;height:5px;border-radius:50%;background:#000;"></div>':''}
-        </div>
-        <span style="font-size:9px;color:var(--text3);min-width:12px;">${i+1}</span>
-        <span class="abadge ${attrCls[m.attr]}">${attrIcon[m.attr]}</span>
-        <span style="font-size:12px;font-weight:600;flex:1;">${dispName}${cntBadge}</span>
-        <span style="font-size:10px;color:var(--text2);white-space:nowrap;">${m.mainPower.toFixed(1)}만${advMark?` <span style="color:${advColor};font-size:9px;">${advMark}</span>`:''}</span>
-        <span class="order-opt-adv ${advCls}" style="min-width:20px;text-align:center;">${advTxt}</span>
-        ${!sel&&d&&!d.impossible?`<span style="font-size:10px;color:var(--gold);white-space:nowrap;">${d.needed}명</span>`:''}
-        ${!sel&&!d?`<span style="font-size:10px;color:var(--success);">✓</span>`:''}
-        ${!sel&&d?.impossible?`<span style="font-size:10px;color:var(--danger);">⚠️</span>`:''}
-      </div>
-      ${dummyRow}
-    </div>`;
-  }
-
-  const leftHtml=left.map((o,i)=>makeCard(o,i)).join('');
-  const rightHtml=right.map((o,i)=>makeCard(o,i+4)).join('');
-
-  document.getElementById('orderArea').innerHTML=`
-    <div class="order-result">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
-        <div style="display:flex;align-items:center;gap:8px;margin-bottom:0;"><div style="width:3px;height:16px;background:var(--accent);border-radius:2px;"></div><span style="font-size:11px;font-weight:700;color:var(--text);letter-spacing:1px;">추천 오더 &nbsp;—&nbsp; 효율기준 추천 ${lastOrders.length}명</span></div>
-        <div style="font-size:10px;color:var(--text3);">클릭 선택 후 출전 확정</div>
-      </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
-        <div style="display:flex;flex-direction:column;gap:4px;">${leftHtml}</div>
-        <div style="display:flex;flex-direction:column;gap:4px;">${rightHtml}</div>
-      </div>
-      <!-- 상대 덱 정보 + 더미 요약 (카드 선택 시 항상 표시) -->
-      <div id="enemyInfoBar" style="display:none;margin-top:10px;border-top:1px solid var(--border2);padding-top:8px;">
-        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:11px;">
-          <span style="color:var(--text3);font-weight:700;font-size:10px;">상대</span>
-          <span id="enemyInfoPower" style="color:var(--text2);"></span>
-          <span id="enemyInfoDummy" style="color:var(--gold);"></span>
-        </div>
-      </div>
-
-      <!-- 오토멘트 -->
-      <div id="autoMentArea" style="display:none;margin-top:6px;border-top:1px solid var(--border2);padding-top:10px;">
-        <div style="display:grid;grid-template-columns:44px 1fr;gap:5px;align-items:center;">
-          <span style="color:var(--text3);font-weight:700;font-size:10px;white-space:nowrap;">공성시</span>
-          <div style="display:flex;flex-direction:column;gap:4px;">
-            <div style="display:flex;align-items:center;gap:5px;">
-              <span id="mentAtk1" style="flex:1;color:var(--text2);background:var(--bg3);border-radius:4px;padding:4px 8px;font-size:10px;"></span>
-              <button onclick="copyMent('mentAtk1')" style="padding:3px 8px;font-size:10px;font-weight:700;background:var(--bg3);color:var(--text2);border:1px solid var(--border);border-radius:4px;cursor:pointer;white-space:nowrap;">복사</button>
-            </div>
-            <div id="mentAtk2Row" style="display:flex;align-items:center;gap:5px;">
-              <span id="mentAtk2" style="flex:1;color:var(--text2);background:var(--bg3);border-radius:4px;padding:4px 8px;font-size:10px;"></span>
-              <button onclick="copyMent('mentAtk2')" style="padding:3px 8px;font-size:10px;font-weight:700;background:var(--bg3);color:var(--text2);border:1px solid var(--border);border-radius:4px;cursor:pointer;white-space:nowrap;">복사</button>
-            </div>
-          </div>
-          <span style="color:var(--text3);font-weight:700;font-size:10px;white-space:nowrap;margin-top:4px;">수성시</span>
-          <div style="display:flex;align-items:center;gap:5px;margin-top:4px;">
-            <span id="mentDef1" style="flex:1;color:var(--text2);background:var(--bg3);border-radius:4px;padding:4px 8px;font-size:10px;"></span>
-            <button onclick="copyMent('mentDef1')" style="padding:3px 8px;font-size:10px;font-weight:700;background:var(--bg3);color:var(--text2);border:1px solid var(--border);border-radius:4px;cursor:pointer;white-space:nowrap;">복사</button>
-          </div>
-        </div>
-      </div>
-
-      <div style="display:flex;gap:6px;align-items:center;margin-top:10px;position:relative;">
-        <div style="flex:1;position:relative;">
-          <input class="inp" id="confirmInp" placeholder="출전 멤버 이름 검색..." style="width:100%;" oninput="srchConfirm(this.value)" autocomplete="off">
-          <div id="confirmDD" style="display:none;position:absolute;top:calc(100%+4px);left:0;right:0;background:var(--bg3);border:1px solid var(--accent);border-radius:5px;z-index:200;max-height:160px;overflow-y:auto;box-shadow:0 4px 12px rgba(0,0,0,0.15);"></div>
-        </div>
-        <button class="btn btn-success" onclick="confirmDeploy()" style="white-space:nowrap;padding:8px 14px;font-size:12px;">✓ 출전 확정</button>
-      </div>
-    </div>`;
-}
-
-function srchConfirm(val){
-  const dd=document.getElementById('confirmDD');
-  if(!val.trim()||!myGuild.length){dd.style.display='none';return;}
-  const avail=myGuild.filter(m=>spentCount(mySpentMap,m.name)<2&&m.name.includes(val)).slice(0,8);
-  if(!avail.length){dd.style.display='none';return;}
-  const attrIcon={red:'🔴',blue:'🔵',green:'🟢'};
-  dd.innerHTML=avail.map(m=>`<div style="padding:7px 10px;font-size:12px;cursor:pointer;display:flex;align-items:center;gap:8px;" onmouseover="this.style.background='var(--bg4)'" onmouseout="this.style.background=''" onclick="pickConfirm('${m.name}')">
-    <span>${attrIcon[m.attr]}</span>
-    <span style="flex:1;font-weight:500;">${m.name}</span>
-    <span style="font-size:10px;color:var(--text3);">${m.mainPower.toFixed(1)}만</span>
-  </div>`).join('');
-  dd.style.display='block';
-}
-function pickConfirm(name){
-  const inp=document.getElementById('confirmInp');
-  if(inp) inp.value=name;
-  pendingCustom=name;
-  document.getElementById('confirmDD').style.display='none';
-}
-
-function selectOrder(idx){
-  selectedOrderIdx=idx;
-  const o=lastOrders[idx];
-  const m=o?.member;
-  if(m){
-    const inp=document.getElementById('confirmInp');
-    if(inp)inp.value=m.name;
-    pendingCustom=m.name;
-  }
-  renderOrderResult();
-  // 오토멘트 업데이트 (렌더 후 DOM 생성된 뒤에 실행)
-  if(m) setTimeout(()=>updateAutoMent(m.name, o?.dummy), 0);
-}
-
-// ── 오토멘트 ──
-function updateAutoMent(memberName, dummy){
-  const area = document.getElementById('autoMentArea');
-  if(!area) return;
-
-  // 선택한 우리 길드원 이름
-  const name = memberName || '?';
-
-  // 상대 덱 정보 표시
-  const infoBar = document.getElementById('enemyInfoBar');
-  const infoPower = document.getElementById('enemyInfoPower');
-  const infoDummy = document.getElementById('enemyInfoDummy');
-  if(infoBar && infoPower && selectedEnemy){
-    const attrIcon={red:'🔴',blue:'🔵',green:'🟢'};
-    const eIcon = attrIcon[selectedEnemy.attr] || '';
-    const mainStr = `${eIcon} ${selectedEnemy.mainPower.toFixed(1)}만`;
-    const subStr = selectedEnemy.subPower > 0 ? ` &nbsp;${attrIcon[selectedEnemy.subAttr||selectedEnemy.attr] || ''} ${selectedEnemy.subPower.toFixed(1)}만` : '';
-    infoPower.innerHTML = `<strong>${mainStr}</strong>${subStr}`;
-    if(dummy && !dummy.impossible && dummy.needed > 0){
-      infoDummy.textContent = `약화 ${Math.round(dummy.weaken*100)}%  더미 ${dummy.needed}명 (~${dummy.bands}반)`;
-    } else {
-      infoDummy.textContent = '';
-    }
-    infoBar.style.display = 'block';
-  }
-
-  // 더미 수치
-  const hasDummy = dummy && !dummy.impossible && dummy.needed > 0;
-  const dummyNeeded = hasDummy ? dummy.needed : 0;
-  const bandNeeded  = hasDummy ? dummy.bands  : 0;
-
-  // 공성 멘트1
-  const atk1 = hasDummy
-    ? `더미 ${dummyNeeded}개 먹으면 ${name}님 메인덱 갈게요`
-    : `지금 바로 ${name}님 메인덱 갈게요`;
-
-  // 공성 멘트2 (더미 있을 때만 표시)
-  const atk2Row = document.getElementById('mentAtk2Row');
-  if(atk2Row) atk2Row.style.display = hasDummy ? 'flex' : 'none';
-  const atk2 = `더미 ${dummyNeeded}개 먹여주세요`;
-
-  // 수성 멘트
-  const defPos = bandNeeded + 1;
-  const def1 = hasDummy
-    ? `지금 ${name}님 [# ${defPos}]까지 올릴게요 (더미 ${dummyNeeded}개)`
-    : `지금 ${name}님 맨 위로 올릴게요`;
-
-  document.getElementById('mentAtk1').textContent = atk1;
-  document.getElementById('mentAtk2').textContent = atk2;
-  document.getElementById('mentDef1').textContent = def1;
-  area.style.display = 'block';
-}
-
-function copyMent(elId){
-  const el = document.getElementById(elId);
-  if(!el) return;
-  navigator.clipboard.writeText(el.textContent).then(()=>{
-    const orig = el.style.color;
-    el.style.color = 'var(--success)';
-    setTimeout(()=>{ el.style.color = orig; }, 600);
-  });
-}
-
-// ── 출전 확정 ──
-function confirmDeploy(){
-  const inp=document.getElementById('confirmInp');
-  const usedName=(inp?.value||pendingCustom||'').trim();
-  // 우리팀 소진 (Firebase)
-  setSpent('mySpentMap', usedName, Math.min(spentCount(mySpentMap,usedName)+1, 2));
-  // 상대팀 소진 (Firebase)
-  setSpent('enSpentMap', selectedEnemy.name, Math.min(spentCount(enSpentMap,selectedEnemy.name)+1, 2));
-  // 초기화
-  clearSelection();
-}
-
-// ── 소진 현황 렌더 ──
-function pips(cnt){
-  return `<div class="spent-pips">
-    <div class="pip ${cnt>=1?'on':'off'}"></div>
-    <div class="pip ${cnt>=2?'on':'off'}"></div>
-    <span class="spent-label">${cnt>=2?'소진':cnt===1?'1회':'대기'}</span>
-  </div>`;
-}
-
-function renderMySpent(){
-  if(document.getElementById('tabMyContent')?.style.display==='block') buildMyGrid();
-  const el=document.getElementById('mySpent');
-  const entries=Object.entries(mySpentMap)
-    .map(([name,v])=>({name,count:typeof v==='object'?v.count||0:v,updatedAt:typeof v==='object'?v.updatedAt||0:0}))
-    .filter(e=>e.count>0)
-    .sort((a,b)=>b.updatedAt-a.updatedAt);
-  if(!entries.length){el.innerHTML='<div class="no-data">출전 확정 시 표시</div>';return;}
-  el.innerHTML=entries.map(({name,count:cnt})=>{
-    const m=myGuild.find(x=>x.name===name);
-    const ic=m?({red:'🔴',blue:'🔵',green:'🟢'}[m.attr]||''):'';
-    return `<div class="spent-item">
-      <span class="spent-name">${ic} ${name}</span>
-      <div style="display:flex;align-items:center;gap:8px;">
-        ${pips(cnt)}
-        <button class="btn btn-ghost" style="padding:2px 7px;font-size:10px;" onclick="resetMySpent('${name}')">↩</button>
-      </div>
-    </div>`;
-  }).join('');
-}
-
-function renderEnSpent(){
-  const el=document.getElementById('enSpent');
-  const entries=Object.entries(enSpentMap)
-    .map(([name,v])=>({name,count:typeof v==='object'?v.count||0:v,updatedAt:typeof v==='object'?v.updatedAt||0:0}))
-    .filter(e=>e.count>0)
-    .sort((a,b)=>b.updatedAt-a.updatedAt);
-  if(!entries.length){el.innerHTML='<div class="no-data">상대 출전 확정 시 표시</div>';return;}
-  el.innerHTML=entries.map(({name,count:cnt})=>{
-    const m=enemyGuild.find(x=>x.name===name);
-    const ic=m?({red:'🔴',blue:'🔵',green:'🟢'}[m.attr]||''):'';
-    return `<div class="spent-item">
-      <span class="spent-name">${ic} ${name}</span>
-      <div style="display:flex;align-items:center;gap:8px;">
-        ${pips(cnt)}
-        <button class="btn btn-ghost" style="padding:2px 7px;font-size:10px;" onclick="resetEnSpent('${name}')">↩</button>
-      </div>
-    </div>`;
-  }).join('');
-}
-
-function resetMySpent(name){
-  const next = Math.max(spentCount(mySpentMap,name)-1, 0);
-  setSpent('mySpentMap', name, next);
-}
-function resetEnSpent(name){
-  const next = Math.max(spentCount(enSpentMap,name)-1, 0);
-  setSpent('enSpentMap', name, next);
-}
-
-// ── 수성전 ──
-function srchDefMy(val){
-  const dd=document.getElementById('defDDMy');
-  if(!val.trim()||!myGuild.length){dd.style.display='none';return;}
-  const hits=myGuild.filter(m=>m.name.includes(val)).slice(0,6);
-  if(!hits.length){dd.style.display='none';return;}
-  const attrIcon={red:'🔴',blue:'🔵',green:'🟢'};
-  dd.innerHTML=hits.map(m=>`<div style="padding:7px 10px;font-size:12px;cursor:pointer;" onmouseover="this.style.background='var(--bg4)'" onmouseout="this.style.background=''" onclick="pickDefMy('${m.name}')">${attrIcon[m.attr]} ${m.name} <span style="color:var(--text3);font-size:10px;">${m.mainPower?m.mainPower.toFixed(1)+'만':''}</span></div>`).join('');
-  dd.style.display='block';
-}
-function pickDefMy(name){
-  document.getElementById('defInpMy').value=name;
-  document.getElementById('defDDMy').style.display='none';
-}
-function applyDefenseMy(){
-  const name=(document.getElementById('defInpMy').value||'').trim();
-  if(!name){alert('이름을 입력하세요.');return;}
-  if(myGuild.length && !myGuild.find(x=>x.name===name)){
-    alert(`"${name}" 은(는) 우리 길드 멤버가 아닙니다.`);return;
-  }
-  setSpent('mySpentMap', name, Math.min(spentCount(mySpentMap,name)+1, 2));
-  document.getElementById('defInpMy').value='';
-  const el=document.getElementById('defAppliedMy');
-  el.textContent=`✓ ${name} 처리됨`; el.style.color='var(--success)';
-  setTimeout(()=>{el.textContent='';},3000);
-}
-
-function srchDefEn(val){
-  const dd=document.getElementById('defDDEn');
-  if(!val.trim()||!enemyGuild.length){dd.style.display='none';return;}
-  const hits=enemyGuild.filter(m=>m.name.includes(val)).slice(0,6);
-  if(!hits.length){dd.style.display='none';return;}
-  const attrIcon={red:'🔴',blue:'🔵',green:'🟢'};
-  dd.innerHTML=hits.map(m=>`<div style="padding:7px 10px;font-size:12px;cursor:pointer;" onmouseover="this.style.background='var(--bg4)'" onmouseout="this.style.background=''" onclick="pickDefEn('${m.name}')">${attrIcon[m.attr]} ${m.name} <span style="color:var(--text3);font-size:10px;">${m.mainPower?m.mainPower.toFixed(1)+'만':''}</span></div>`).join('');
-  dd.style.display='block';
-}
-function pickDefEn(name){
-  document.getElementById('defInpEn').value=name;
-  document.getElementById('defDDEn').style.display='none';
-}
-function applyDefenseEn(){
-  const name=(document.getElementById('defInpEn').value||'').trim();
-  if(!name){alert('이름을 입력하세요.');return;}
-  if(enemyGuild.length && !enemyGuild.find(x=>x.name===name)){
-    alert(`"${name}" 은(는) 상대 길드 멤버가 아닙니다.`);return;
-  }
-  setSpent('enSpentMap', name, Math.min(spentCount(enSpentMap,name)+1, 2));
-  document.getElementById('defInpEn').value='';
-  const el=document.getElementById('defAppliedEn');
-  el.textContent=`✓ ${name} 처리됨`; el.style.color='var(--red)';
-  setTimeout(()=>{el.textContent='';},3000);
-}
-
-
-// ── 소진 현황 렌더 ──
-function pips(cnt){
-  return `<div class="spent-pips">
-    <div class="pip ${cnt>=1?'on':'off'}"></div>
-    <div class="pip ${cnt>=2?'on':'off'}"></div>
-    <span class="spent-label">${cnt>=2?'소진':cnt===1?'1회':'대기'}</span>
-  </div>`;
-}
-
-function renderMySpent(){
-  if(document.getElementById('tabMyContent')?.style.display==='block') buildMyGrid();
-  const el=document.getElementById('mySpent');
-  const entries=Object.entries(mySpentMap)
-    .map(([name,v])=>({name,count:typeof v==='object'?v.count||0:v,updatedAt:typeof v==='object'?v.updatedAt||0:0}))
-    .filter(e=>e.count>0)
-    .sort((a,b)=>b.updatedAt-a.updatedAt);
-  if(!entries.length){el.innerHTML='<div class="no-data">출전 확정 시 표시</div>';return;}
-  el.innerHTML=entries.map(({name,count:cnt})=>{
-    const m=myGuild.find(x=>x.name===name);
-    const ic=m?({red:'🔴',blue:'🔵',green:'🟢'}[m.attr]||''):'';
-    return `<div class="spent-item">
-      <span class="spent-name">${ic} ${name}</span>
-      <div style="display:flex;align-items:center;gap:8px;">
-        ${pips(cnt)}
-        <button class="btn btn-ghost" style="padding:2px 7px;font-size:10px;" onclick="resetMySpent('${name}')">↩</button>
-      </div>
-    </div>`;
-  }).join('');
-}
-
-function renderEnSpent(){
-  const el=document.getElementById('enSpent');
-  const entries=Object.entries(enSpentMap)
-    .map(([name,v])=>({name,count:typeof v==='object'?v.count||0:v,updatedAt:typeof v==='object'?v.updatedAt||0:0}))
-    .filter(e=>e.count>0)
-    .sort((a,b)=>b.updatedAt-a.updatedAt);
-  if(!entries.length){el.innerHTML='<div class="no-data">상대 출전 확정 시 표시</div>';return;}
-  el.innerHTML=entries.map(({name,count:cnt})=>{
-    const m=enemyGuild.find(x=>x.name===name);
-    const ic=m?({red:'🔴',blue:'🔵',green:'🟢'}[m.attr]||''):'';
-    return `<div class="spent-item">
-      <span class="spent-name">${ic} ${name}</span>
-      <div style="display:flex;align-items:center;gap:8px;">
-        ${pips(cnt)}
-        <button class="btn btn-ghost" style="padding:2px 7px;font-size:10px;" onclick="resetEnSpent('${name}')">↩</button>
-      </div>
-    </div>`;
-  }).join('');
-}
-
-
-
-// ── 수성전 ──
-let defTab='my'; // 'my' | 'en'
-
-
-function srchDef(val){
-  const dd=document.getElementById('defDD');
-  if(!val.trim()){dd.style.display='none';return;}
-  const pool=defTab==='my'?myGuild:enemyGuild;
-  if(!pool.length){dd.style.display='none';return;}
-  const hits=pool.filter(m=>m.name.includes(val)).slice(0,6);
-  if(!hits.length){dd.style.display='none';return;}
-  const attrIcon={red:'🔴',blue:'🔵',green:'🟢'};
-  dd.innerHTML=hits.map(m=>`<div style="padding:7px 10px;font-size:12px;cursor:pointer;" onmouseover="this.style.background='var(--bg4)'" onmouseout="this.style.background=''" onclick="pickDef('${m.name}')">${attrIcon[m.attr]||''} ${m.name} <span style="color:var(--text3);font-size:10px;">${m.mainPower?m.mainPower.toFixed(1)+'만':''}</span></div>`).join('');
-  dd.style.display='block';
-}
-
-function pickDef(name){
-  defPending=name;
-  document.getElementById('defInp').value=name;
-  document.getElementById('defDD').style.display='none';
-}
-
-function applyDefense(){
-  const name=(defPending||document.getElementById('defInp').value||'').trim();
-  if(!name){alert('이름을 입력하세요.');return;}
-  if(defTab==='my'){
-    mySpentMap[name]=Math.min((mySpentMap[name]||0)+1,2);
-    renderMySpent();
-    const cnt=mySpentMap[name];
-    showDefMsg(`✓ [우리] ${name} ${cnt>=2?'소진':'1회 출전'} 처리됨`);
-  } else {
-    enSpentMap[name]=Math.min((enSpentMap[name]||0)+1,2);
-    renderEnSpent();
-    buildEnemyGrid();
-    const cnt=enSpentMap[name];
-    showDefMsg(`✓ [상대] ${name} ${cnt>=2?'소진':'1회 출전'} 처리됨`);
-  }
-  defPending=null;
-  document.getElementById('defInp').value='';
-}
-
-function showDefMsg(msg){
-  const el=document.getElementById('defApplied');
-  if(el){el.textContent=msg; el.style.color='var(--success)'; setTimeout(()=>{el.textContent='';},3000);}
-}
-
-function fullReset(){
-  if(!confirm('길드전 데이터를 전부 초기화할까요?\n(길드 데이터, 소진 현황, 선택 상태 모두 삭제)')) return;
-  // passwords, slots 제외하고 길드전 데이터만 삭제
-  Promise.all([
-    db.ref('myGuild').remove(),
-    db.ref('enemyGuild').remove(),
-    db.ref('myGuildName').remove(),
-    db.ref('enemyGuildName').remove(),
-    db.ref('mySpentMap').remove(),
-    db.ref('enSpentMap').remove(),
-    db.ref('selectedEnemy').remove(),
-    db.ref('onlineUsers').remove(),
-  ]).then(()=>{
-    myGuild=[]; enemyGuild=[];
-    myGuildName=''; enemyGuildName='';
-    mySpentMap={}; enSpentMap={};
-    onlineUsers={}; mySlot=null;
-    selectedEnemy=null; lastOrders=[]; selectedOrderIdx=null;
-    // UI 초기화
-    document.getElementById('myUSub').textContent='CSV 선택';
-    document.getElementById('myUSub').style.color='var(--text3)';
-    document.getElementById('enUSub').textContent='CSV 선택';
-    document.getElementById('enUSub').style.color='var(--text3)';
-    const myUB=document.getElementById('myUB');
-    myUB.style.borderStyle='dashed'; myUB.style.borderColor='var(--border)';
-    const enUB=document.getElementById('enUB');
-    enUB.style.borderStyle='dashed'; enUB.style.borderColor='var(--border)';
-    document.getElementById('enemyBtnGrid').innerHTML='<div style="font-size:11px;color:var(--text3);padding:4px 0;">상대 길드 CSV를 로드하면 여기에 선택 버튼이 나타납니다</div>';
-    document.getElementById('orderArea').innerHTML='<div style="display:flex;align-items:center;justify-content:center;height:80px;color:var(--text3);font-size:12px;">상대 출전자를 선택하고 분석하세요</div>';
-    document.getElementById('ddLabel').textContent='';
-    document.getElementById('myULabel').textContent='우리 길드';
-    document.getElementById('enULabel').textContent='상대 길드';
-    renderMySpent(); renderEnSpent(); renderOnlineSlots();
-  });
-}
-
-// ── 권한 체크 ──
-function canEdit(){
-  return mySlot !== null;
-}
-
-function requireEdit(){
-  if(!canEdit()){
-    alert('수정 권한이 없습니다.\n패스워드를 입력해주세요.');
-    openPasswordModal();
-    return false;
-  }
-  return true;
-}
-
-// ── 패스워드 모달 ──
-function openPasswordModal(){
-  document.getElementById('pwModal').style.display='flex';
-  document.getElementById('pwInput').value='';
-  document.getElementById('pwError').textContent='';
-  if(mySlot){
-    document.getElementById('pwCurrentSlot').textContent=`현재 접속: ${slotNames[mySlot]||mySlot}`;
-  } else {
-    document.getElementById('pwCurrentSlot').textContent='';
-  }
-  setTimeout(()=>document.getElementById('pwInput').focus(),100);
-}
-
-function closePasswordModal(){
-  document.getElementById('pwModal').style.display='none';
-}
-
-function submitPassword(){
-  const pw = document.getElementById('pwInput').value.trim();
-  if(!pw){ document.getElementById('pwError').textContent='패스워드를 입력하세요.'; return; }
-
-  // passwords 객체에서 일치하는 슬롯 찾기
-  const matched = Object.entries(passwords).find(([,v])=>String(v)===pw);
-  if(!matched){
-    document.getElementById('pwError').textContent='패스워드가 올바르지 않습니다.';
-    return;
-  }
-  const slotKey = matched[0];
-
-  // 이미 다른 사람이 같은 슬롯 사용 중인지 확인
-  const slotInUse = onlineUsers[slotKey];
-  if(slotInUse && slotInUse !== mySessionId){
-    document.getElementById('pwError').textContent=`이미 다른 기기에서 접속 중입니다. (${slotNames[slotKey]||slotKey})`;
-    return;
-  }
-
-  // 기존 슬롯 해제
-  if(mySlot) db.ref(`onlineUsers/${mySlot}`).remove();
-
-  // 새 슬롯 등록
-  mySlot = slotKey;
-  db.ref(`onlineUsers/${slotKey}`).set(mySessionId);
-
-  // 접속 종료 시 자동 해제
-  db.ref(`onlineUsers/${slotKey}`).onDisconnect().remove();
-
-  closePasswordModal();
-}
-
-// ── 접속자 슬롯 렌더링 ──
-function renderOnlineSlots(){
-  const el = document.getElementById('onlineSlots');
-  if(!el) return;
-  const staffOrder = ['slot1','slot2','slot3','slot4','slot5','slot6'];
-  const guestOrder = ['guest1','guest2','guest3'];
-
-  // 운영진 슬롯 (개별 표시)
-  const staffHtml = staffOrder.map(key => {
-    const name = slotNames[key] || key;
-    const isOnline = !!onlineUsers[key];
-    const isMe = onlineUsers[key] === mySessionId;
-    const bg = isMe ? 'var(--accent)' : isOnline ? 'rgba(30,140,69,0.15)' : 'var(--bg3)';
-    const color = isMe ? '#fff' : isOnline ? 'var(--success)' : 'var(--text3)';
-    const border = isMe ? 'var(--accent)' : isOnline ? 'rgba(30,140,69,0.4)' : 'var(--border)';
-    return `<div style="padding:3px 10px;font-size:10px;font-weight:700;background:${bg};color:${color};border:1px solid ${border};border-radius:20px;white-space:nowrap;transition:all 0.2s;">${name}</div>`;
-  }).join('');
-
-  // 게스트 슬롯 (G: n/3 형태로 묶어서 표시)
-  const guestCount = guestOrder.filter(k => !!onlineUsers[k]).length;
-  const iAmGuest = guestOrder.some(k => onlineUsers[k] === mySessionId);
-  const gBg = iAmGuest ? 'var(--accent)' : guestCount>0 ? 'rgba(30,140,69,0.15)' : 'var(--bg3)';
-  const gColor = iAmGuest ? '#fff' : guestCount>0 ? 'var(--success)' : 'var(--text3)';
-  const gBorder = iAmGuest ? 'var(--accent)' : guestCount>0 ? 'rgba(30,140,69,0.4)' : 'var(--border)';
-  const guestHtml = `<div style="padding:3px 10px;font-size:10px;font-weight:700;background:${gBg};color:${gColor};border:1px solid ${gBorder};border-radius:20px;white-space:nowrap;transition:all 0.2s;">G: ${guestCount}/3</div>`;
-
-  el.innerHTML = staffHtml + guestHtml;
-}
-
-// ── 수정 권한 래핑 ──
-const _selectEnemy = selectEnemy;
-selectEnemy = function(name){ if(!requireEdit()) return; _selectEnemy(name); };
-
-const _confirmDeploy = confirmDeploy;
-confirmDeploy = function(){
-  if(!selectedEnemy){alert('상대 출전자가 선택되지 않았습니다.');return;}
-  const inp=document.getElementById('confirmInp');
-  const usedName=(inp?.value||pendingCustom||'').trim();
-  if(!usedName){alert('출전할 멤버를 선택하거나 이름을 입력하세요.');return;}
-  const validMember=myGuild.find(x=>x.name===usedName);
-  if(!validMember){alert('"'+usedName+'" 은(는) 우리 길드 멤버가 아닙니다.');return;}
-  if(!requireEdit()) return;
-  _confirmDeploy();
-};
-
-const _applyDefenseMy = applyDefenseMy;
-applyDefenseMy = function(){ if(!requireEdit()) return; _applyDefenseMy(); };
-
-const _applyDefenseEn = applyDefenseEn;
-applyDefenseEn = function(){ if(!requireEdit()) return; _applyDefenseEn(); };
-
-const _resetMySpent = resetMySpent;
-resetMySpent = function(name){ if(!requireEdit()) return; _resetMySpent(name); };
-
-const _resetEnSpent = resetEnSpent;
-resetEnSpent = function(name){ if(!requireEdit()) return; _resetEnSpent(name); };
-
-const _fullReset = fullReset;
-fullReset = function(){ if(!requireEdit()) return; _fullReset(); };
-
-// 모달 바깥 클릭 시 닫기
-document.getElementById('pwModal').addEventListener('click', function(e){
-  if(e.target === this) closePasswordModal();
-});
-
-// 시작!
-initFirebaseListeners();
-
-
-</script>
-
-<!-- 푸터 -->
-<div style="padding:14px 20px;background:#666666;border-top:1px solid #555;font-family:'Noto Sans KR',sans-serif;position:relative;z-index:1;color:#fff;margin-top:auto;">
+<!-- ════════════════════════════════════════════════════════════
+     [HTML] 푸터 — 핵심 수치 & 버전 정보
+     ════════════════════════════════════════════════════════════ -->
+<div style="padding:14px 20px;background:#666;border-top:1px solid #555;
+  font-family:'Noto Sans KR',sans-serif;position:relative;z-index:1;color:#fff;margin-top:auto;">
   <div style="display:flex;flex-wrap:wrap;gap:24px;align-items:flex-start;">
-
-    <!-- 핵심 수치 -->
     <div>
       <div style="font-size:9px;font-weight:700;color:rgba(255,255,255,0.5);letter-spacing:2px;margin-bottom:6px;">핵심 수치</div>
       <div id="footerStats" style="font-size:10px;color:rgba(255,255,255,0.85);line-height:2;"></div>
     </div>
-
-    <!-- 구분선 -->
     <div style="width:1px;background:rgba(255,255,255,0.2);align-self:stretch;"></div>
-
-    <!-- 버전 & 업데이트 내역 -->
     <div style="flex:1;min-width:200px;">
       <div style="font-size:9px;font-weight:700;color:rgba(255,255,255,0.5);letter-spacing:2px;margin-bottom:6px;">버전 & 업데이트</div>
       <div style="font-size:10px;color:rgba(255,255,255,0.85);line-height:2;">
@@ -1356,19 +649,969 @@ initFirebaseListeners();
         · 메인급/더미급 버튼 구분 / 2컬럼 카드 / 모바일 반응형
       </div>
     </div>
-
   </div>
 </div>
 
-<script>
-// 푸터 수치 동적 렌더링
-document.getElementById('footerStats').innerHTML =
-  '동일상성 &nbsp;<strong style="color:#fff;">' + ATTR_SAME.toFixed(2) + '</strong><br>' +
-  '우세상성 &nbsp;<strong style="color:#7dffb0;">' + ATTR_ADV.toFixed(2) + '</strong><br>' +
-  '약세상성 &nbsp;<strong style="color:#ff9090;">' + ATTR_DIS.toFixed(2) + '</strong><br>' +
-  '안전기준 &nbsp;<strong style="color:#ffd97d;">' + SAFETY.toFixed(2) + '</strong><br>' +
-  '더미기준 &nbsp;<strong style="color:#fff;">' + DUMMY_MAX + '명 / ' + BAND_SIZE + '명(1반)</strong>';
-</script>
 
+<!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<script>
+/* ════════════════════════════════════════════════════════════
+   [JS] 핵심 수치 상수
+   ※ 여기서만 수정하면 계산 로직 + 푸터 수치 전체 자동 반영
+   ════════════════════════════════════════════════════════════ */
+const ATTR_ADV  = 1.25;  // 우세 상성 배율
+const ATTR_SAME = 1.0;   // 동일 상성 배율
+const ATTR_DIS  = 0.8;   // 약세 상성 배율
+const SAFETY    = 0.90;  // 안전기준 (상대를 내 실효전력의 n% 이하로)
+const DUMMY_MAX = 480;   // 더미 최대 인원 (완전약화 기준)
+const BAND_SIZE = 6;     // 1반 인원
+
+
+/* ════════════════════════════════════════════════════════════
+   [JS] Firebase 초기화 & 헬퍼
+   ════════════════════════════════════════════════════════════ */
+const firebaseConfig = {
+  apiKey:            "AIzaSyCIBF8ACLZ724INQXTtKdr1iV4nOW54Kqo",
+  authDomain:        "inter-order.firebaseapp.com",
+  databaseURL:       "https://inter-order-default-rtdb.firebaseio.com",
+  projectId:         "inter-order",
+  storageBucket:     "inter-order.firebasestorage.app",
+  messagingSenderId: "951121899834",
+  appId:             "1:951121899834:web:338531706d7b5672fc2003"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+
+function fbSet(path, value)          { return db.ref(path).set(value); }
+function fbWatch(path, cb)           { db.ref(path).on("value", snap => cb(snap.val())); }
+function fbTransaction(path, updateFn){ return db.ref(path).transaction(updateFn); }
+
+
+/* ════════════════════════════════════════════════════════════
+   [JS] 핵심 상태 변수
+   ════════════════════════════════════════════════════════════ */
+let myGuild = [], enemyGuild = [];
+let myGuildName = '', enemyGuildName = '';
+let mySpentMap = {}, enSpentMap = {};
+let passwords = {}, slotNames = {}, onlineUsers = {};
+let mySlot = null;                              // 로그인 슬롯 키 (null = 읽기전용)
+let mySessionId = Math.random().toString(36).slice(2, 10); // 브라우저 세션 ID
+let selectedEnemy = null;
+let selectedOrderIdx = null;
+let lastOrders = [];
+let pendingCustom = '';
+let mainThreshold = 0;                          // 메인급 기준 전투력 (만 단위, 0=미설정)
+
+
+/* ════════════════════════════════════════════════════════════
+   [JS] Firebase 실시간 리스너 초기화
+   ════════════════════════════════════════════════════════════ */
+function initFirebaseListeners() {
+
+  // 우리 길드 데이터
+  fbWatch('myGuild', val => {
+    if (!val) return;
+    myGuild = val;
+    renderMySpent();
+    const ub = document.getElementById('myUB');
+    ub.classList.add('ok');
+    const name = myGuildName || '';
+    if (name) {
+      document.getElementById('myULabel').textContent = '';
+      document.getElementById('myUSub').textContent   = `${name} (${myGuild.length}명)`;
+    } else {
+      document.getElementById('myULabel').textContent = '우리 길드';
+      document.getElementById('myUSub').textContent   = `✓ ${myGuild.length}명`;
+    }
+    document.getElementById('myUSub').style.color = 'var(--success)';
+  });
+
+  // 상대 길드 데이터
+  fbWatch('enemyGuild', val => {
+    if (!val) return;
+    enemyGuild = val;
+    buildEnemyGrid();
+    renderEnSpent();
+    const ub = document.getElementById('enUB');
+    ub.classList.add('ok');
+    const name = enemyGuildName || '';
+    if (name) {
+      document.getElementById('enULabel').textContent = '';
+      document.getElementById('enUSub').textContent   = `${name} (${enemyGuild.length}명)`;
+    } else {
+      document.getElementById('enULabel').textContent = '상대 길드';
+      document.getElementById('enUSub').textContent   = `✓ ${enemyGuild.length}명`;
+    }
+    document.getElementById('enUSub').style.color = 'var(--success)';
+  });
+
+  // 길드 이름
+  fbWatch('myGuildName', val => {
+    if (!val) return;
+    myGuildName = val;
+    if (myGuild.length) {
+      document.getElementById('myULabel').textContent = '';
+      document.getElementById('myUSub').textContent   = `${val} (${myGuild.length}명)`;
+      document.getElementById('myUSub').style.color   = 'var(--success)';
+    }
+  });
+  fbWatch('enemyGuildName', val => {
+    if (!val) return;
+    enemyGuildName = val;
+    if (enemyGuild.length) {
+      document.getElementById('enULabel').textContent = '';
+      document.getElementById('enUSub').textContent   = `${val} (${enemyGuild.length}명)`;
+      document.getElementById('enUSub').style.color   = 'var(--success)';
+    }
+  });
+
+  // 메인급 기준 수치
+  fbWatch('mainThreshold', val => {
+    mainThreshold = val || 0;
+    const inp = document.getElementById('mainThreshInp');
+    if (inp && val) inp.value = val;
+    buildEnemyGrid();
+  });
+
+  // 우리 소진 현황
+  fbWatch('mySpentMap', val => {
+    mySpentMap = val || {};
+    renderMySpent();
+    if (lastOrders.length) renderOrderResult();
+  });
+
+  // 상대 소진 현황
+  fbWatch('enSpentMap', val => {
+    enSpentMap = val || {};
+    renderEnSpent();
+    buildEnemyGrid();
+  });
+
+  // 패스워드 목록
+  fbWatch('passwords', val => { passwords = val || {}; });
+
+  // 슬롯 이름
+  fbWatch('slots', val => {
+    slotNames = val || {
+      slot1:'길드장', slot2:'부길드장1', slot3:'부길드장2',
+      slot4:'외교역', slot5:'군사',      slot6:'행정역',
+      guest1:'게스트1', guest2:'게스트2', guest3:'게스트3'
+    };
+    renderOnlineSlots();
+  });
+
+  // 온라인 유저
+  fbWatch('onlineUsers', val => {
+    onlineUsers = val || {};
+    renderOnlineSlots();
+  });
+
+  // 선택된 상대
+  fbWatch('selectedEnemy', val => {
+    selectedEnemy = val || null;
+    if (selectedEnemy) {
+      const attrIcon = { red:'🔴', blue:'🔵', green:'🟢' };
+      document.getElementById('ddLabel').innerHTML =
+        `선택: ${selectedEnemy.name} &nbsp;${attrIcon[selectedEnemy.attr]} &nbsp;` +
+        `<span style="font-family:'Noto Sans KR',sans-serif;font-size:10px;">` +
+        `메인 ${selectedEnemy.mainPower.toFixed(1)}만 &nbsp;서브 ${selectedEnemy.subPower.toFixed(1)}만</span>`;
+      document.getElementById('ddLabel').style.color = 'var(--accent)';
+      analyze();
+    } else {
+      document.getElementById('ddLabel').textContent = '';
+      document.getElementById('orderArea').innerHTML =
+        '<div style="display:flex;align-items:center;justify-content:center;height:80px;color:var(--text3);font-size:12px;">상대 출전자를 선택하고 분석하세요</div>';
+    }
+    buildEnemyGrid();
+  });
+}
+
+
+/* ════════════════════════════════════════════════════════════
+   [JS] 소진 맵 유틸
+   ════════════════════════════════════════════════════════════ */
+function spentCount(map, name) {
+  const e = map[name];
+  if (!e) return 0;
+  return typeof e === 'object' ? e.count || 0 : e;
+}
+
+function setSpent(path, name, newCount) {
+  if (newCount <= 0) { db.ref(`${path}/${name}`).remove(); return; }
+  db.ref(`${path}/${name}`).set({ count: newCount, updatedAt: Date.now() });
+}
+
+
+/* ════════════════════════════════════════════════════════════
+   [JS] CSV 파싱 & 로드
+   ════════════════════════════════════════════════════════════ */
+function loadCSV(type, input) {
+  const file = input.files[0]; if (!file) return;
+  if (!requireEdit()) { input.value = ''; return; }
+  const r = new FileReader();
+  r.onload = e => {
+    const { list, guildName } = parseCSV(e.target.result);
+    if (type === 'my') {
+      myGuildName = guildName;
+      fbSet('myGuild',     list);
+      fbSet('myGuildName', guildName);
+      fbSet('mySpentMap',  {});
+    } else {
+      enemyGuildName = guildName;
+      fbSet('enemyGuild',     list);
+      fbSet('enemyGuildName', guildName);
+      fbSet('enSpentMap',     {});
+    }
+  };
+  r.readAsText(file, 'utf-8');
+}
+
+function parseCSV(text) {
+  const lines = text.trim().split('\n').filter(l => l.trim());
+  if (!lines.length) return { list: [], guildName: '' };
+  const delim = lines[0].includes('\t') ? '\t' : ',';
+  const firstCols = lines[0].split(delim).map(c => c.trim().replace(/"/g, ''));
+  const guildName = firstCols[2] || '';
+  const res = [];
+  for (let i = 0; i < lines.length; i++) {
+    const cols = lines[i].split(delim).map(c => c.trim().replace(/"/g, ''));
+    const nameVal = (cols[2] || '').trim();
+    if (!nameVal) continue;
+    const up = nameVal.toUpperCase();
+    if (up === 'FALSE' || up === 'TRUE' || up === '유저' || nameVal.startsWith('<') || nameVal.startsWith('20')) continue;
+    if (/^\d+$/.test(nameVal)) continue;
+    const bandPower = parsePow(cols[3]);
+    const mainPower = parsePow(cols[6]);
+    const subPower  = parsePow(cols[10]);
+    const attr      = parseAttr(cols[5] || '');
+    if (!bandPower && !mainPower) continue;
+    const effPower = mainPower + subPower * 0.35;
+    res.push({ name: nameVal, bandPower, mainPower, subPower, effPower, attr });
+  }
+  return { list: res.sort((a, b) => b.effPower - a.effPower), guildName };
+}
+
+function parsePow(s) {
+  return parseFloat((s || '0').replace(/만/g, '').replace(/,/g, '').trim()) || 0;
+}
+
+function parseAttr(s) {
+  const v = (s || '').trim();
+  if (v === '화') return 'red';
+  if (v === '수') return 'blue';
+  if (v === '목') return 'green';
+  if (v.includes('🔴') || v.toLowerCase().includes('red'))   return 'red';
+  if (v.includes('🔵') || v.toLowerCase().includes('blue'))  return 'blue';
+  if (v.includes('🟢') || v.toLowerCase().includes('green')) return 'green';
+  return 'red';
+}
+
+
+/* ════════════════════════════════════════════════════════════
+   [JS] 메인급 기준 수치 저장
+   ════════════════════════════════════════════════════════════ */
+function saveThresh() {
+  if (!requireEdit()) return;
+  const val = parseInt(document.getElementById('mainThreshInp').value || '0');
+  if (!val || val <= 0) { alert('수치를 입력해주세요 (예: 500 = 500만)'); return; }
+  mainThreshold = val;
+  fbSet('mainThreshold', val);
+  buildEnemyGrid();
+}
+function previewThresh(val) { /* 확인 버튼 눌렀을 때만 반영 */ }
+
+
+/* ════════════════════════════════════════════════════════════
+   [JS] 탭 전환 (상대 덱 선택 ↔ 우리 길드 현황)
+   ════════════════════════════════════════════════════════════ */
+function switchGridTab(tab) {
+  const isEnemy = tab === 'enemy';
+  document.getElementById('tabEnemyContent').style.display = isEnemy ? 'block' : 'none';
+  document.getElementById('tabMyContent').style.display   = isEnemy ? 'none'  : 'block';
+
+  const tE   = document.getElementById('tabEnemy');
+  const tM   = document.getElementById('tabMy');
+  const card = document.getElementById('gridCard');
+
+  if (isEnemy) {
+    tE.className   = 'tab-btn active-enemy';
+    tM.className   = 'tab-btn inactive';
+    card.classList.remove('grid-card-my');
+  } else {
+    tM.className   = 'tab-btn active-my';
+    tE.className   = 'tab-btn inactive';
+    card.classList.add('grid-card-my');
+    buildMyGrid();
+  }
+}
+
+
+/* ════════════════════════════════════════════════════════════
+   [JS] 그리드 렌더 — 우리 길드 현황 버튼
+   ════════════════════════════════════════════════════════════ */
+function buildMyGrid() {
+  const grid = document.getElementById('myBtnGrid');
+  if (!myGuild.length) {
+    grid.innerHTML = '<div class="btn-grid-empty">우리 길드 CSV를 로드하면 여기에 표시됩니다</div>';
+    return;
+  }
+  const attrIcon = { red:'🔴', blue:'🔵', green:'🟢' };
+  grid.innerHTML = myGuild.map(m => {
+    const cnt      = spentCount(mySpentMap, m.name);
+    const spent    = cnt >= 2;
+    const once     = cnt === 1;
+    const isMain   = mainThreshold > 0 && m.effPower >= mainThreshold;
+    const subIcon  = m.subPower > 0 ? attrIcon[m.attr] : '';
+    const dispName = m.name.length > 5 ? m.name.slice(0, 5) + '…' : m.name;
+    const subTip   = m.subPower > 0 ? ` / 서브 ${m.subPower.toFixed(1)}만` : '';
+    const tooltip  = `${m.name}\n메인 ${m.mainPower.toFixed(1)}만${subTip}`;
+
+    let bg, border, opacity, textColor;
+    const textDecor = spent ? 'line-through' : 'none';
+
+    if (isMain) {
+      if (spent)      { bg='rgba(88,166,255,0.08)'; border='rgba(88,166,255,0.2)'; opacity='0.45'; textColor='var(--text3)'; }
+      else if (once)  { bg='rgba(88,166,255,0.18)'; border='var(--warn)';          opacity='0.85'; textColor='var(--text)'; }
+      else            { bg='rgba(88,166,255,0.13)'; border='rgba(88,166,255,0.5)'; opacity='1';    textColor='var(--text)'; }
+    } else {
+      if (spent)      { bg='var(--bg3)'; border='rgba(255,255,255,0.15)'; opacity='0.4'; textColor='var(--text3)'; }
+      else if (once)  { bg='var(--bg3)'; border='rgba(255,255,255,0.6)';  opacity='0.8'; textColor='var(--text2)'; }
+      else            { bg='var(--bg3)'; border='var(--border2)';          opacity='1';   textColor='var(--text)'; }
+    }
+
+    return `<div title="${tooltip}"
+      style="width:130px;height:28px;background:${bg};border:1px solid ${border};border-radius:5px;
+        color:${textColor};font-family:'Noto Sans KR',sans-serif;font-size:11px;font-weight:500;
+        opacity:${opacity};display:flex;align-items:center;justify-content:center;gap:3px;padding:0 6px;
+        white-space:nowrap;overflow:hidden;text-decoration:${textDecor};cursor:default;">
+      <span>${attrIcon[m.attr]}</span>
+      ${subIcon ? `<span style="font-size:9px;">${subIcon}</span>` : ''}
+      <span>${dispName}</span>
+      ${once ? `<span style="font-size:9px;color:var(--warn);margin-left:2px;">1회</span>` : ''}
+    </div>`;
+  }).join('');
+}
+
+
+/* ════════════════════════════════════════════════════════════
+   [JS] 그리드 렌더 — 상대 출전자 선택 버튼
+   ════════════════════════════════════════════════════════════ */
+function buildEnemyGrid() {
+  const grid = document.getElementById('enemyBtnGrid');
+  if (!enemyGuild.length) {
+    grid.innerHTML = '<div class="btn-grid-empty">상대 길드 CSV를 로드하면 여기에 선택 버튼이 나타납니다</div>';
+    return;
+  }
+  const attrIcon = { red:'🔴', blue:'🔵', green:'🟢' };
+  grid.innerHTML = enemyGuild.map(m => {
+    const cnt        = spentCount(enSpentMap, m.name);
+    const spent      = cnt >= 2;
+    const once       = cnt === 1;
+    const isSelected = selectedEnemy && selectedEnemy.name === m.name;
+    const subIcon    = m.subPower > 0 ? attrIcon[m.attr] : '';
+    const isMain     = mainThreshold > 0 && m.effPower >= mainThreshold;
+    const dispName   = m.name.length > 5 ? m.name.slice(0, 5) + '...' : m.name;
+
+    let bg, border, opacity, textColor;
+    const textDecor = spent ? 'line-through' : 'none';
+
+    if (isSelected) {
+      bg='rgba(30,210,100,0.22)'; border='rgba(30,210,100,0.8)'; opacity='1'; textColor='var(--text)';
+    } else if (isMain) {
+      if (spent)     { bg='rgba(88,166,255,0.08)'; border='rgba(88,166,255,0.2)'; opacity='0.45'; textColor='var(--text3)'; }
+      else if (once) { bg='rgba(88,166,255,0.18)'; border='var(--warn)';          opacity='0.85'; textColor='var(--text)'; }
+      else           { bg='rgba(88,166,255,0.13)'; border='rgba(88,166,255,0.5)'; opacity='1';    textColor='var(--text)'; }
+    } else {
+      if (spent)     { bg='var(--bg3)'; border='rgba(255,255,255,0.15)'; opacity='0.4'; textColor='var(--text3)'; }
+      else if (once) { bg='var(--bg3)'; border='rgba(255,255,255,0.6)';  opacity='0.8'; textColor='var(--text2)'; }
+      else           { bg='var(--bg3)'; border='var(--border2)';          opacity='1';   textColor='var(--text)'; }
+    }
+
+    return `<button onclick="selectEnemy('${m.name}')" ${spent ? 'disabled' : ''}
+      style="width:130px;height:28px;background:${bg};border:1px solid ${border};border-radius:5px;
+        color:${textColor};font-family:'Noto Sans KR',sans-serif;font-size:11px;font-weight:500;
+        cursor:${spent ? 'not-allowed' : 'pointer'};opacity:${opacity};
+        display:flex;align-items:center;justify-content:center;gap:3px;padding:0 6px;
+        white-space:nowrap;overflow:hidden;transition:all 0.1s;text-decoration:${textDecor};">
+      <span>${attrIcon[m.attr]}</span>
+      ${subIcon ? `<span style="font-size:9px;">${subIcon}</span>` : ''}
+      <span>${dispName}</span>
+      ${once ? `<span style="font-size:9px;color:var(--warn);margin-left:2px;">1회</span>` : ''}
+    </button>`;
+  }).join('');
+}
+
+function selectEnemy(name) {
+  const m = enemyGuild.find(x => x.name === name);
+  if (!m || spentCount(enSpentMap, m.name) >= 2) return;
+  fbSet('selectedEnemy', m);
+}
+
+function clearSelection() {
+  fbSet('selectedEnemy', null);
+  selectedOrderIdx = null; lastOrders = [];
+  pendingCustom = '';
+  const inp = document.getElementById('confirmInp');
+  if (inp) inp.value = '';
+}
+
+
+/* ════════════════════════════════════════════════════════════
+   [JS] 분석 & 추천 오더 계산
+   ════════════════════════════════════════════════════════════ */
+
+// 상성 우위 판정: 1=우위 / 0=동일 / -1=약세
+function adv(mine, theirs) {
+  const wins  = { red:'green', green:'blue', blue:'red' };
+  const loses = { red:'blue',  green:'red',  blue:'green' };
+  if (wins[mine]  === theirs) return  1;
+  if (loses[mine] === theirs) return -1;
+  return 0;
+}
+
+function analyze() {
+  const ra = document.getElementById('orderArea');
+  if (!myGuild.length)    { ra.innerHTML = '<div style="color:var(--text3);font-size:12px;padding:20px;text-align:center;">우리 길드 CSV를 먼저 불러오세요</div>'; return; }
+  if (!selectedEnemy)     { ra.innerHTML = '<div style="color:var(--text3);font-size:12px;padding:20px;text-align:center;">상대 출전자를 선택하세요</div>'; return; }
+
+  const ep    = selectedEnemy.effPower;
+  const eAttr = selectedEnemy.attr;
+  const avail = myGuild.filter(m => spentCount(mySpentMap, m.name) < 2);
+
+  const ATK_MULT = { '1': ATTR_ADV, '0': ATTR_SAME, '-1': ATTR_DIS };
+  const scored = avail.map(m => {
+    const a    = adv(m.attr, eAttr);
+    const mult = ATK_MULT[String(a)];
+    const eff  = m.effPower * mult;
+    const ratio = eff / (ep || 1);
+    return { ...m, eff, ratio, advVal: a, mult };
+  }).sort((a, b) => {
+    const aOk = ep <= a.eff * SAFETY, bOk = ep <= b.eff * SAFETY;
+    if (aOk && !bOk) return -1; if (!aOk && bOk) return 1;
+    if (aOk && bOk)  return a.effPower - b.effPower;
+    return b.eff - a.eff;
+  });
+
+  const topN = scored.slice(0, Math.min(8, scored.length));
+  lastOrders = topN.map(m => ({ member: m, dummy: calcDummy(ep, m.effPower, m.advVal) }));
+  selectedOrderIdx = null;
+  renderOrderResult();
+}
+
+function calcDummy(ep, mp, advVal) {
+  const mult   = advVal === 1 ? ATTR_ADV : advVal === -1 ? ATTR_DIS : ATTR_SAME;
+  const effMp  = mp * mult;
+  const target = effMp * SAFETY;
+  if (!ep || ep <= target) return null;
+  const weaken = 1 - (target / ep);
+  const needed = Math.ceil(weaken * DUMMY_MAX);
+  if (needed > 480) return { impossible: true };
+  const n50 = Math.min(Math.ceil(weaken / 0.5 * (DUMMY_MAX / 2)), DUMMY_MAX / 2);
+  return { impossible: false, needed, bands: Math.ceil(needed / 6), weaken, n50, b50: Math.ceil(n50 / 6) };
+}
+
+
+/* ════════════════════════════════════════════════════════════
+   [JS] 추천 오더 결과 렌더
+   ════════════════════════════════════════════════════════════ */
+function renderOrderResult() {
+  if (!lastOrders.length) return;
+  const attrIcon = { red:'🔴', blue:'🔵', green:'🟢' };
+  const attrCls  = { red:'ab-red', blue:'ab-blue', green:'ab-green' };
+
+  function makeCard(o, i) {
+    const m   = o.member, d = o.dummy;
+    const cnt = spentCount(mySpentMap, m.name);
+    let advCls = 'adv-draw', advTxt = '동';
+    if (m.ratio >= 1.1)  { advCls = 'adv-win';  advTxt = '우'; }
+    else if (m.ratio < 0.85) { advCls = 'adv-lose'; advTxt = '열'; }
+    const advColor  = m.advVal === 1 ? 'var(--success)' : m.advVal === -1 ? 'var(--danger)' : 'var(--text3)';
+    const advMark   = m.advVal === 1 ? '▲' : m.advVal === -1 ? '▼' : '';
+    const cntBadge  = cnt === 1 ? `<span style="font-size:9px;color:var(--warn);margin-left:2px;">1회</span>` : '';
+    const sel       = selectedOrderIdx === i;
+    const dispName  = m.name.length > 5 ? m.name.slice(0, 5) + '…' : m.name;
+
+    let dummyRow = '';
+    if (sel && d && !d.impossible) {
+      dummyRow = `<div class="dummy-inline">
+        <span style="color:var(--gold);font-weight:700;">💀</span>
+        <span style="color:var(--text2);">약화 <strong style="color:var(--gold);">${Math.round(d.weaken * 100)}%</strong></span>
+        <span style="color:var(--text2);">더미 <strong style="color:var(--gold);">${d.needed}명 (~${d.bands}반)</strong></span>
+      </div>`;
+    } else if (sel && d?.impossible) {
+      dummyRow = `<div class="dummy-impossible">⚠️ 더미로 처리 불가</div>`;
+    }
+
+    const radioHtml = `<div class="order-radio ${sel ? 'checked' : ''}">
+      ${sel ? '<div style="width:5px;height:5px;border-radius:50%;background:#000;"></div>' : ''}
+    </div>`;
+
+    return `<div class="order-card ${sel ? 'selected' : ''}" onclick="selectOrder(${i})">
+      <div class="order-card-row">
+        ${radioHtml}
+        <span class="order-num">${i + 1}</span>
+        <span class="abadge ${attrCls[m.attr]}">${attrIcon[m.attr]}</span>
+        <span class="order-name">${dispName}${cntBadge}</span>
+        <span class="order-power">${m.mainPower.toFixed(1)}만${advMark ? ` <span style="color:${advColor};font-size:9px;">${advMark}</span>` : ''}</span>
+        <span class="order-adv ${advCls}">${advTxt}</span>
+        ${!sel && d && !d.impossible ? `<span style="font-size:10px;color:var(--gold);white-space:nowrap;">${d.needed}명</span>` : ''}
+        ${!sel && !d                 ? `<span style="font-size:10px;color:var(--success);">✓</span>` : ''}
+        ${!sel && d?.impossible      ? `<span style="font-size:10px;color:var(--danger);">⚠️</span>` : ''}
+      </div>
+      ${dummyRow}
+    </div>`;
+  }
+
+  const left  = lastOrders.slice(0, 4);
+  const right = lastOrders.slice(4, 8);
+
+  document.getElementById('orderArea').innerHTML = `
+    <div class="order-result">
+      <div class="order-header">
+        <div class="order-label">추천 오더 — 메인전력 상위 ${lastOrders.length}명</div>
+        <div class="order-hint">클릭 선택 후 출전 확정</div>
+      </div>
+      <div class="order-cols">
+        <div class="order-col">${left.map((o, i) => makeCard(o, i)).join('')}</div>
+        <div class="order-col">${right.map((o, i) => makeCard(o, i + 4)).join('')}</div>
+      </div>
+
+      <!-- 상대 덱 정보 바 -->
+      <div id="enemyInfoBar" class="enemy-info-bar">
+        <div class="enemy-info-row">
+          <span class="enemy-info-label">상대</span>
+          <span id="enemyInfoPower" style="color:var(--text2);"></span>
+          <span id="enemyInfoDummy" style="color:var(--gold);"></span>
+        </div>
+      </div>
+
+      <!-- 오토멘트 -->
+      <div id="autoMentArea" class="ment-area">
+        <div class="ment-grid">
+          <span class="ment-key">공성시</span>
+          <div class="ment-col">
+            <div class="ment-row">
+              <span id="mentAtk1" class="ment-text"></span>
+              <button class="btn-sm-copy" onclick="copyMent('mentAtk1')">복사</button>
+            </div>
+            <div id="mentAtk2Row" class="ment-row">
+              <span id="mentAtk2" class="ment-text"></span>
+              <button class="btn-sm-copy" onclick="copyMent('mentAtk2')">복사</button>
+            </div>
+          </div>
+          <span class="ment-key ment-key-def">수성시</span>
+          <div class="ment-row" style="margin-top:4px;">
+            <span id="mentDef1" class="ment-text"></span>
+            <button class="btn-sm-copy" onclick="copyMent('mentDef1')">복사</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 출전 확정 -->
+      <div class="confirm-row">
+        <div class="confirm-inp-wrap">
+          <input class="inp" id="confirmInp" placeholder="출전 멤버 이름 검색..."
+            oninput="srchConfirm(this.value)" autocomplete="off">
+          <div id="confirmDD"></div>
+        </div>
+        <button class="btn btn-success" onclick="confirmDeploy()" style="white-space:nowrap;padding:8px 14px;font-size:12px;">✓ 출전 확정</button>
+      </div>
+    </div>`;
+}
+
+
+/* ════════════════════════════════════════════════════════════
+   [JS] 오더 카드 선택 & 오토멘트
+   ════════════════════════════════════════════════════════════ */
+function selectOrder(idx) {
+  selectedOrderIdx = idx;
+  const o = lastOrders[idx];
+  const m = o?.member;
+  if (m) {
+    const inp = document.getElementById('confirmInp');
+    if (inp) inp.value = m.name;
+    pendingCustom = m.name;
+  }
+  renderOrderResult();
+  if (m) setTimeout(() => updateAutoMent(m.name, o?.dummy), 0);
+}
+
+function updateAutoMent(memberName, dummy) {
+  const area = document.getElementById('autoMentArea');
+  if (!area) return;
+  const name     = memberName || '?';
+  const hasDummy = dummy && !dummy.impossible && dummy.needed > 0;
+  const dummyN   = hasDummy ? dummy.needed : 0;
+  const bandN    = hasDummy ? dummy.bands  : 0;
+
+  // 상대 덱 정보 바
+  const infoBar    = document.getElementById('enemyInfoBar');
+  const infoPower  = document.getElementById('enemyInfoPower');
+  const infoDummy  = document.getElementById('enemyInfoDummy');
+  if (infoBar && infoPower && selectedEnemy) {
+    const attrIcon = { red:'🔴', blue:'🔵', green:'🟢' };
+    const eIcon    = attrIcon[selectedEnemy.attr] || '';
+    infoPower.innerHTML = `<strong>${eIcon} ${selectedEnemy.mainPower.toFixed(1)}만</strong>` +
+      (selectedEnemy.subPower > 0 ? ` &nbsp;${eIcon} ${selectedEnemy.subPower.toFixed(1)}만` : '');
+    infoDummy.textContent = (hasDummy && dummy.needed > 0)
+      ? `약화 ${Math.round(dummy.weaken * 100)}%  더미 ${dummy.needed}명 (~${dummy.bands}반)` : '';
+    infoBar.style.display = 'block';
+  }
+
+  // 공성 멘트1
+  const atk1 = hasDummy
+    ? `더미 ${dummyN}개 먹으면 ${name}님 메인덱 갈게요`
+    : `지금 바로 ${name}님 메인덱 갈게요`;
+
+  // 공성 멘트2 (더미 있을 때만 표시)
+  const atk2Row = document.getElementById('mentAtk2Row');
+  if (atk2Row) atk2Row.style.display = hasDummy ? 'flex' : 'none';
+
+  // 수성 멘트
+  const def1 = hasDummy
+    ? `지금 ${name}님 [# ${bandN + 1}]까지 올릴게요 (더미 ${dummyN}개)`
+    : `지금 ${name}님 맨 위로 올릴게요`;
+
+  document.getElementById('mentAtk1').textContent = atk1;
+  document.getElementById('mentAtk2').textContent = `더미 ${dummyN}개 먹여주세요`;
+  document.getElementById('mentDef1').textContent = def1;
+  area.style.display = 'block';
+}
+
+function copyMent(elId) {
+  const el = document.getElementById(elId); if (!el) return;
+  navigator.clipboard.writeText(el.textContent).then(() => {
+    const orig = el.style.color;
+    el.style.color = 'var(--success)';
+    setTimeout(() => { el.style.color = orig; }, 600);
+  });
+}
+
+
+/* ════════════════════════════════════════════════════════════
+   [JS] 출전 확정 & 확정 검색
+   ════════════════════════════════════════════════════════════ */
+function srchConfirm(val) {
+  const dd = document.getElementById('confirmDD');
+  if (!val.trim() || !myGuild.length) { dd.style.display = 'none'; return; }
+  const avail = myGuild.filter(m => spentCount(mySpentMap, m.name) < 2 && m.name.includes(val)).slice(0, 8);
+  if (!avail.length) { dd.style.display = 'none'; return; }
+  const attrIcon = { red:'🔴', blue:'🔵', green:'🟢' };
+  dd.innerHTML = avail.map(m =>
+    `<div class="dd-item" onclick="pickConfirm('${m.name}')">
+      <span>${attrIcon[m.attr]}</span>
+      <span class="dd-item-name">${m.name}</span>
+      <span class="dd-item-power">${m.mainPower.toFixed(1)}만</span>
+    </div>`
+  ).join('');
+  dd.style.display = 'block';
+}
+
+function pickConfirm(name) {
+  const inp = document.getElementById('confirmInp');
+  if (inp) inp.value = name;
+  pendingCustom = name;
+  document.getElementById('confirmDD').style.display = 'none';
+}
+
+function confirmDeploy() {
+  const inp     = document.getElementById('confirmInp');
+  const usedName = (inp?.value || pendingCustom || '').trim();
+  setSpent('mySpentMap', usedName,         Math.min(spentCount(mySpentMap, usedName) + 1, 2));
+  setSpent('enSpentMap', selectedEnemy.name, Math.min(spentCount(enSpentMap, selectedEnemy.name) + 1, 2));
+  clearSelection();
+}
+
+
+/* ════════════════════════════════════════════════════════════
+   [JS] 소진 현황 렌더
+   ════════════════════════════════════════════════════════════ */
+function pips(cnt) {
+  return `<div class="spent-pips">
+    <div class="pip ${cnt >= 1 ? 'on' : 'off'}"></div>
+    <div class="pip ${cnt >= 2 ? 'on' : 'off'}"></div>
+    <span class="spent-label">${cnt >= 2 ? '소진' : cnt === 1 ? '1회' : '대기'}</span>
+  </div>`;
+}
+
+function renderMySpent() {
+  if (document.getElementById('tabMyContent')?.style.display === 'block') buildMyGrid();
+  const el = document.getElementById('mySpent');
+  const entries = Object.entries(mySpentMap)
+    .map(([name, v]) => ({ name, count: typeof v === 'object' ? v.count || 0 : v, updatedAt: typeof v === 'object' ? v.updatedAt || 0 : 0 }))
+    .filter(e => e.count > 0)
+    .sort((a, b) => b.updatedAt - a.updatedAt);
+  if (!entries.length) { el.innerHTML = '<div class="no-data">출전 확정 시 표시</div>'; return; }
+  const attrIcon = { red:'🔴', blue:'🔵', green:'🟢' };
+  el.innerHTML = entries.map(({ name, count: cnt }) => {
+    const m  = myGuild.find(x => x.name === name);
+    const ic = m ? (attrIcon[m.attr] || '') : '';
+    return `<div class="spent-item">
+      <span class="spent-name">${ic} ${name}</span>
+      <div class="spent-right">
+        ${pips(cnt)}
+        <button class="btn btn-ghost" style="padding:2px 7px;font-size:10px;" onclick="resetMySpent('${name}')">↩</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderEnSpent() {
+  const el = document.getElementById('enSpent');
+  const entries = Object.entries(enSpentMap)
+    .map(([name, v]) => ({ name, count: typeof v === 'object' ? v.count || 0 : v, updatedAt: typeof v === 'object' ? v.updatedAt || 0 : 0 }))
+    .filter(e => e.count > 0)
+    .sort((a, b) => b.updatedAt - a.updatedAt);
+  if (!entries.length) { el.innerHTML = '<div class="no-data">상대 출전 확정 시 표시</div>'; return; }
+  const attrIcon = { red:'🔴', blue:'🔵', green:'🟢' };
+  el.innerHTML = entries.map(({ name, count: cnt }) => {
+    const m  = enemyGuild.find(x => x.name === name);
+    const ic = m ? (attrIcon[m.attr] || '') : '';
+    return `<div class="spent-item">
+      <span class="spent-name">${ic} ${name}</span>
+      <div class="spent-right">
+        ${pips(cnt)}
+        <button class="btn btn-ghost" style="padding:2px 7px;font-size:10px;" onclick="resetEnSpent('${name}')">↩</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function resetMySpent(name) { setSpent('mySpentMap', name, Math.max(spentCount(mySpentMap, name) - 1, 0)); }
+function resetEnSpent(name) { setSpent('enSpentMap', name, Math.max(spentCount(enSpentMap, name) - 1, 0)); }
+
+
+/* ════════════════════════════════════════════════════════════
+   [JS] 수동 덱 소모 체크 (우리 / 상대 각각)
+   ════════════════════════════════════════════════════════════ */
+function srchDefMy(val) {
+  const dd = document.getElementById('defDDMy');
+  if (!val.trim() || !myGuild.length) { dd.style.display = 'none'; return; }
+  const hits = myGuild.filter(m => m.name.includes(val)).slice(0, 6);
+  if (!hits.length) { dd.style.display = 'none'; return; }
+  const attrIcon = { red:'🔴', blue:'🔵', green:'🟢' };
+  dd.innerHTML = hits.map(m =>
+    `<div class="dd-item" onclick="pickDefMy('${m.name}')">
+      ${attrIcon[m.attr]} ${m.name}
+      <span class="dd-item-power">${m.mainPower ? m.mainPower.toFixed(1) + '만' : ''}</span>
+    </div>`
+  ).join('');
+  dd.style.display = 'block';
+}
+
+function pickDefMy(name) {
+  document.getElementById('defInpMy').value = name;
+  document.getElementById('defDDMy').style.display = 'none';
+}
+
+function applyDefenseMy() {
+  const name = (document.getElementById('defInpMy').value || '').trim();
+  if (!name) { alert('이름을 입력하세요.'); return; }
+  if (myGuild.length && !myGuild.find(x => x.name === name)) { alert(`"${name}" 은(는) 우리 길드 멤버가 아닙니다.`); return; }
+  setSpent('mySpentMap', name, Math.min(spentCount(mySpentMap, name) + 1, 2));
+  document.getElementById('defInpMy').value = '';
+  const el = document.getElementById('defAppliedMy');
+  el.textContent = `✓ ${name} 처리됨`; el.style.color = 'var(--success)';
+  setTimeout(() => { el.textContent = ''; }, 3000);
+}
+
+function srchDefEn(val) {
+  const dd = document.getElementById('defDDEn');
+  if (!val.trim() || !enemyGuild.length) { dd.style.display = 'none'; return; }
+  const hits = enemyGuild.filter(m => m.name.includes(val)).slice(0, 6);
+  if (!hits.length) { dd.style.display = 'none'; return; }
+  const attrIcon = { red:'🔴', blue:'🔵', green:'🟢' };
+  dd.innerHTML = hits.map(m =>
+    `<div class="dd-item" onclick="pickDefEn('${m.name}')">
+      ${attrIcon[m.attr]} ${m.name}
+      <span class="dd-item-power">${m.mainPower ? m.mainPower.toFixed(1) + '만' : ''}</span>
+    </div>`
+  ).join('');
+  dd.style.display = 'block';
+}
+
+function pickDefEn(name) {
+  document.getElementById('defInpEn').value = name;
+  document.getElementById('defDDEn').style.display = 'none';
+}
+
+function applyDefenseEn() {
+  const name = (document.getElementById('defInpEn').value || '').trim();
+  if (!name) { alert('이름을 입력하세요.'); return; }
+  if (enemyGuild.length && !enemyGuild.find(x => x.name === name)) { alert(`"${name}" 은(는) 상대 길드 멤버가 아닙니다.`); return; }
+  setSpent('enSpentMap', name, Math.min(spentCount(enSpentMap, name) + 1, 2));
+  document.getElementById('defInpEn').value = '';
+  const el = document.getElementById('defAppliedEn');
+  el.textContent = `✓ ${name} 처리됨`; el.style.color = 'var(--red)';
+  setTimeout(() => { el.textContent = ''; }, 3000);
+}
+
+
+/* ════════════════════════════════════════════════════════════
+   [JS] 전체 리셋
+   ════════════════════════════════════════════════════════════ */
+function fullReset() {
+  if (!confirm('길드전 데이터를 전부 초기화할까요?\n(길드 데이터, 소진 현황, 선택 상태 모두 삭제)')) return;
+  Promise.all([
+    db.ref('myGuild').remove(),      db.ref('enemyGuild').remove(),
+    db.ref('myGuildName').remove(),  db.ref('enemyGuildName').remove(),
+    db.ref('mySpentMap').remove(),   db.ref('enSpentMap').remove(),
+    db.ref('selectedEnemy').remove(), db.ref('onlineUsers').remove(),
+  ]).then(() => {
+    myGuild = []; enemyGuild = [];
+    myGuildName = ''; enemyGuildName = '';
+    mySpentMap = {}; enSpentMap = {};
+    onlineUsers = {}; mySlot = null;
+    selectedEnemy = null; lastOrders = []; selectedOrderIdx = null;
+    // UI 초기화
+    const resetUpload = (labelId, subId, ubId, labelText) => {
+      document.getElementById(labelId).textContent = labelText;
+      const sub = document.getElementById(subId);
+      sub.textContent = 'CSV 선택'; sub.style.color = 'var(--text3)';
+      document.getElementById(ubId).classList.remove('ok');
+    };
+    resetUpload('myULabel', 'myUSub', 'myUB', '우리 길드');
+    resetUpload('enULabel', 'enUSub', 'enUB', '상대 길드');
+    document.getElementById('enemyBtnGrid').innerHTML = '<div class="btn-grid-empty">상대 길드 CSV를 로드하면 여기에 선택 버튼이 나타납니다</div>';
+    document.getElementById('orderArea').innerHTML    = '<div style="display:flex;align-items:center;justify-content:center;height:80px;color:var(--text3);font-size:12px;">상대 출전자를 선택하고 분석하세요</div>';
+    document.getElementById('ddLabel').textContent = '';
+    renderMySpent(); renderEnSpent(); renderOnlineSlots();
+  });
+}
+
+
+/* ════════════════════════════════════════════════════════════
+   [JS] 권한 체크
+   ════════════════════════════════════════════════════════════ */
+function canEdit()     { return mySlot !== null; }
+function requireEdit() {
+  if (!canEdit()) { alert('수정 권한이 없습니다.\n패스워드를 입력해주세요.'); openPasswordModal(); return false; }
+  return true;
+}
+
+
+/* ════════════════════════════════════════════════════════════
+   [JS] 패스워드 모달
+   ════════════════════════════════════════════════════════════ */
+function openPasswordModal() {
+  document.getElementById('pwModal').style.display = 'flex';
+  document.getElementById('pwInput').value = '';
+  document.getElementById('pwError').textContent = '';
+  document.getElementById('pwCurrentSlot').textContent = mySlot ? `현재 접속: ${slotNames[mySlot] || mySlot}` : '';
+  setTimeout(() => document.getElementById('pwInput').focus(), 100);
+}
+
+function closePasswordModal() { document.getElementById('pwModal').style.display = 'none'; }
+
+function submitPassword() {
+  const pw = document.getElementById('pwInput').value.trim();
+  if (!pw) { document.getElementById('pwError').textContent = '패스워드를 입력하세요.'; return; }
+  const matched = Object.entries(passwords).find(([, v]) => String(v) === pw);
+  if (!matched) { document.getElementById('pwError').textContent = '패스워드가 올바르지 않습니다.'; return; }
+  const slotKey    = matched[0];
+  const slotInUse  = onlineUsers[slotKey];
+  if (slotInUse && slotInUse !== mySessionId) {
+    document.getElementById('pwError').textContent = `이미 다른 기기에서 접속 중입니다. (${slotNames[slotKey] || slotKey})`;
+    return;
+  }
+  if (mySlot) db.ref(`onlineUsers/${mySlot}`).remove();
+  mySlot = slotKey;
+  db.ref(`onlineUsers/${slotKey}`).set(mySessionId);
+  db.ref(`onlineUsers/${slotKey}`).onDisconnect().remove();
+  closePasswordModal();
+}
+
+
+/* ════════════════════════════════════════════════════════════
+   [JS] 접속자 슬롯 렌더
+   ════════════════════════════════════════════════════════════ */
+function renderOnlineSlots() {
+  const el = document.getElementById('onlineSlots');
+  if (!el) return;
+  const staffOrder = ['slot1','slot2','slot3','slot4','slot5','slot6'];
+  const guestOrder = ['guest1','guest2','guest3'];
+
+  const staffHtml = staffOrder.map(key => {
+    const name     = slotNames[key] || key;
+    const isMe     = onlineUsers[key] === mySessionId;
+    const isOnline = !!onlineUsers[key];
+    const cls      = isMe ? 'slot-me' : isOnline ? 'slot-online' : 'slot-offline';
+    return `<div class="slot-chip ${cls}">${name}</div>`;
+  }).join('');
+
+  const guestCount = guestOrder.filter(k => !!onlineUsers[k]).length;
+  const iAmGuest   = guestOrder.some(k => onlineUsers[k] === mySessionId);
+  const gCls       = iAmGuest ? 'slot-me' : guestCount > 0 ? 'slot-online' : 'slot-offline';
+  const guestHtml  = `<div class="slot-chip ${gCls}">G: ${guestCount}/3</div>`;
+
+  el.innerHTML = staffHtml + guestHtml;
+}
+
+
+/* ════════════════════════════════════════════════════════════
+   [JS] 드롭다운 외부 클릭 시 닫기
+   ════════════════════════════════════════════════════════════ */
+document.addEventListener('click', e => {
+  if (!e.target.closest('#defInpMy') && !e.target.closest('#defDDMy')) document.getElementById('defDDMy').style.display = 'none';
+  if (!e.target.closest('#defInpEn') && !e.target.closest('#defDDEn')) document.getElementById('defDDEn').style.display = 'none';
+  const cdd = document.getElementById('confirmDD');
+  if (cdd && !e.target.closest('#confirmInp') && !e.target.closest('#confirmDD')) cdd.style.display = 'none';
+});
+
+/* 모달 바깥 클릭 시 닫기 */
+document.getElementById('pwModal').addEventListener('click', function(e) {
+  if (e.target === this) closePasswordModal();
+});
+
+
+/* ════════════════════════════════════════════════════════════
+   [JS] 수정 권한 래핑 — 편집 함수들에 requireEdit() 자동 적용
+   ════════════════════════════════════════════════════════════ */
+const _selectEnemy = selectEnemy;
+selectEnemy = function(name) { if (!requireEdit()) return; _selectEnemy(name); };
+
+const _confirmDeploy = confirmDeploy;
+confirmDeploy = function() {
+  if (!selectedEnemy)                               { alert('상대 출전자가 선택되지 않았습니다.'); return; }
+  const inp      = document.getElementById('confirmInp');
+  const usedName = (inp?.value || pendingCustom || '').trim();
+  if (!usedName)                                    { alert('출전할 멤버를 선택하거나 이름을 입력하세요.'); return; }
+  if (!myGuild.find(x => x.name === usedName))      { alert(`"${usedName}" 은(는) 우리 길드 멤버가 아닙니다.`); return; }
+  if (!requireEdit()) return;
+  _confirmDeploy();
+};
+
+const _applyDefenseMy = applyDefenseMy;
+applyDefenseMy = function() { if (!requireEdit()) return; _applyDefenseMy(); };
+
+const _applyDefenseEn = applyDefenseEn;
+applyDefenseEn = function() { if (!requireEdit()) return; _applyDefenseEn(); };
+
+const _resetMySpent = resetMySpent;
+resetMySpent = function(name) { if (!requireEdit()) return; _resetMySpent(name); };
+
+const _resetEnSpent = resetEnSpent;
+resetEnSpent = function(name) { if (!requireEdit()) return; _resetEnSpent(name); };
+
+const _fullReset = fullReset;
+fullReset = function() { if (!requireEdit()) return; _fullReset(); };
+
+
+/* ════════════════════════════════════════════════════════════
+   [JS] 초기화 — 앱 시작
+   ════════════════════════════════════════════════════════════ */
+initFirebaseListeners();
+
+// 푸터 핵심 수치 동적 렌더링
+document.getElementById('footerStats').innerHTML =
+  `동일상성 &nbsp;<strong style="color:#fff;">${ATTR_SAME.toFixed(2)}</strong><br>` +
+  `우세상성 &nbsp;<strong style="color:#7dffb0;">${ATTR_ADV.toFixed(2)}</strong><br>` +
+  `약세상성 &nbsp;<strong style="color:#ff9090;">${ATTR_DIS.toFixed(2)}</strong><br>` +
+  `안전기준 &nbsp;<strong style="color:#ffd97d;">${SAFETY.toFixed(2)}</strong><br>` +
+  `더미기준 &nbsp;<strong style="color:#fff;">${DUMMY_MAX}명 / ${BAND_SIZE}명(1반)</strong>`;
+
+</script>
 </body>
 </html>
