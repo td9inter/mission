@@ -67,7 +67,7 @@ body::before {
   position: relative; z-index: 1;
   max-width: 1200px;
   margin: 0 auto;
-  padding: 0 16px 16px;
+  padding: 15px 16px 16px;
   display: flex;
   flex-direction: column;
   gap: 12px;
@@ -80,7 +80,7 @@ body::before {
   align-items: start;
 }
 
-.left-panel  { display: flex; flex-direction: column; gap: 10px; }
+.left-panel  { display: flex; flex-direction: column; gap: 0; }
 .right-panel { display: flex; flex-direction: column; gap: 10px; }
 
 /* ════════════════════════════════════════════════════════════
@@ -315,9 +315,16 @@ body::before {
   flex: 1; padding: 5px 0; font-size: 11px; font-weight: 700;
   border: none; cursor: pointer; transition: all 0.15s;
 }
-.tab-btn.active-enemy { background: var(--accent); color: #fff; }
-.tab-btn.active-my    { background: #fffbe6; color: #7a6000; }
+.tab-btn.active-enemy { background: var(--red);  color: #fff; }
+.tab-btn.active-my    { background: var(--blue); color: #fff; }
 .tab-btn.inactive     { background: var(--bg3); color: var(--text2); }
+
+/* 좌패널 카드 사이 구분선 (gap 0 + border로 zone 느낌) */
+.left-panel .card + .card { border-top: none; }
+.left-panel-divider {
+  height: 1px; background: var(--border);
+  margin: 0;
+}
 
 .grid-card-my { background: #fffbe6; }
 
@@ -618,13 +625,6 @@ body::before {
 
       <!-- 상대 탭 내용 -->
       <div id="tabEnemyContent">
-        <div class="grid-header">
-          <div class="sec-title" style="margin-bottom:0;">상대 출전자 선택</div>
-          <div style="display:flex;gap:6px;align-items:center;">
-            <span id="ddLabel" style="font-size:11px;color:var(--accent);font-weight:700;"></span>
-            <button class="btn btn-ghost" onclick="clearSelection()" style="font-size:10px;">초기화</button>
-          </div>
-        </div>
         <div id="enemyBtnGrid" class="btn-grid">
           <div class="btn-grid-empty">상대 길드 CSV를 로드하면 여기에 선택 버튼이 나타납니다</div>
         </div>
@@ -632,17 +632,26 @@ body::before {
 
       <!-- 우리 길드 탭 내용 -->
       <div id="tabMyContent" style="display:none;">
-        <div class="grid-header">
-          <div class="sec-title" style="margin-bottom:0;">우리 길드 현황</div>
-        </div>
         <div id="myBtnGrid" class="btn-grid">
           <div class="btn-grid-empty">우리 길드 CSV를 로드하면 여기에 표시됩니다</div>
         </div>
       </div>
     </div>
 
+    <!-- 좌상단-좌하단 구분선 -->
+    <div class="left-panel-divider"></div>
+
     <!-- 추천 오더 결과 -->
     <div class="card">
+      <!-- 속성별 메인 생존 현황 -->
+      <div id="mainSurvivalBar" style="display:none; margin-bottom:10px; padding-bottom:10px; border-bottom:1px solid var(--border2);">
+        <div style="display:flex; gap:16px; font-size:11px; flex-wrap:wrap;">
+          <span style="color:var(--text3); font-weight:700; font-size:10px; letter-spacing:1px;">메인 생존</span>
+          <span id="survivalEnemy"></span>
+          <span style="color:var(--border);">|</span>
+          <span id="survivalMy"></span>
+        </div>
+      </div>
       <div id="orderArea">
         <div style="display:flex;align-items:center;justify-content:center;height:80px;color:var(--text3);font-size:12px;">
           상대 출전자를 선택하고 분석하세요
@@ -856,6 +865,7 @@ function initFirebaseListeners() {
   fbWatch('mySpentMap', val => {
     mySpentMap = val || {};
     renderMySpent();
+    renderMainSurvival();
     if (lastOrders.length) renderOrderResult();
   });
 
@@ -864,6 +874,7 @@ function initFirebaseListeners() {
     enSpentMap = val || {};
     renderEnSpent();
     buildEnemyGrid();
+    renderMainSurvival();
   });
 
   // 패스워드 목록
@@ -889,19 +900,13 @@ function initFirebaseListeners() {
   fbWatch('selectedEnemy', val => {
     selectedEnemy = val || null;
     if (selectedEnemy) {
-      const attrIcon = { red:'🔴', blue:'🔵', green:'🟢' };
-      document.getElementById('ddLabel').innerHTML =
-        `선택: ${selectedEnemy.name} &nbsp;${attrIcon[selectedEnemy.attr]} &nbsp;` +
-        `<span style="font-family:'Noto Sans KR',sans-serif;font-size:10px;">` +
-        `메인 ${selectedEnemy.mainPower.toFixed(1)}만 &nbsp;서브 ${selectedEnemy.subPower.toFixed(1)}만</span>`;
-      document.getElementById('ddLabel').style.color = 'var(--accent)';
       analyze();
     } else {
-      document.getElementById('ddLabel').textContent = '';
       document.getElementById('orderArea').innerHTML =
         '<div style="display:flex;align-items:center;justify-content:center;height:80px;color:var(--text3);font-size:12px;">상대 출전자를 선택하고 분석하세요</div>';
     }
     buildEnemyGrid();
+    renderMainSurvival();
   });
 }
 
@@ -996,6 +1001,7 @@ function saveThresh() {
   mainThreshold = val;
   fbSet('mainThreshold', val);
   buildEnemyGrid();
+  renderMainSurvival();
 }
 function previewThresh(val) { /* 확인 버튼 눌렀을 때만 반영 */ }
 
@@ -1125,10 +1131,48 @@ function buildEnemyGrid() {
   }).join('');
 }
 
+/* ════════════════════════════════════════════════════════════
+   [JS] 좌하단 — 속성별 메인 생존 현황 렌더
+   ════════════════════════════════════════════════════════════ */
+function renderMainSurvival() {
+  const bar = document.getElementById('mainSurvivalBar');
+  if (!bar) return;
+  const hasData = (enemyGuild.length || myGuild.length) && mainThreshold > 0;
+  if (!hasData) { bar.style.display = 'none'; return; }
+  bar.style.display = 'block';
+
+  const attrIcon = { red:'🔴', blue:'🔵', green:'🟢' };
+  const attrs = ['red','blue','green'];
+
+  const countSurvival = (guild, spentMap) => {
+    return attrs.map(attr => {
+      const alive = guild.filter(m =>
+        m.attr === attr &&
+        mainThreshold > 0 && m.effPower >= mainThreshold &&
+        spentCount(spentMap, m.name) < 2
+      ).length;
+      return alive > 0 ? `${attrIcon[attr]} ${alive}` : null;
+    }).filter(Boolean).join(' &nbsp;');
+  };
+
+  const enText = countSurvival(enemyGuild, enSpentMap);
+  const myText = countSurvival(myGuild, mySpentMap);
+
+  document.getElementById('survivalEnemy').innerHTML =
+    `<span style="color:var(--red);font-weight:700;font-size:10px;">상대</span> <span style="font-size:11px;">${enText || '–'}</span>`;
+  document.getElementById('survivalMy').innerHTML =
+    `<span style="color:var(--blue);font-weight:700;font-size:10px;">우리</span> <span style="font-size:11px;">${myText || '–'}</span>`;
+}
+
 function selectEnemy(name) {
   const m = enemyGuild.find(x => x.name === name);
   if (!m || spentCount(enSpentMap, m.name) >= 2) return;
-  fbSet('selectedEnemy', m);
+  // 토글: 이미 선택된 같은 버튼 누르면 해제
+  if (selectedEnemy && selectedEnemy.name === name) {
+    fbSet('selectedEnemy', null);
+  } else {
+    fbSet('selectedEnemy', m);
+  }
 }
 
 function clearSelection() {
