@@ -326,7 +326,8 @@ body::before {
   margin: 0;
 }
 
-.grid-card-my { background: #fffbe6; }
+/* 우리 길드 탭 — 배경 통일 (노란색 제거) */
+.grid-card-my { background: var(--bg2); }
 
 .grid-header {
   display: flex; align-items: center;
@@ -337,54 +338,44 @@ body::before {
 .btn-grid { display: flex; flex-wrap: wrap; gap: 5px; }
 .btn-grid-empty { font-size: 11px; color: var(--text3); padding: 4px 0; }
 
-/* 추천 오더 결과 박스 */
+/* 추천 오더 결과 박스 — 연보라 박스 제거, 패딩 최소화 */
 .order-result {
-  background: linear-gradient(135deg, rgba(156,39,176,0.05), rgba(26,110,245,0.05));
-  border: 1px solid rgba(26,110,245,0.15);
-  border-radius: 0; padding: 16px;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.08);
-}
-.order-label {
-  font-size: 10px; font-weight: 700;
-  letter-spacing: 3px; text-transform: uppercase; color: var(--pink);
-  margin-bottom: 12px;
+  background: transparent;
+  border: none;
+  border-radius: 0; padding: 0;
 }
 .order-header {
   display: flex; align-items: center;
-  justify-content: space-between; margin-bottom: 10px;
+  justify-content: space-between;
+  background: var(--bg4);
+  padding: 6px 10px;
+  margin-bottom: 6px;
 }
-.order-header .order-label { margin-bottom: 0; }
+.order-label {
+  font-size: 10px; font-weight: 700;
+  letter-spacing: 2px; color: var(--text2);
+  margin-bottom: 0;
+}
 .order-hint { font-size: 10px; color: var(--text3); }
 
-.order-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
-.order-col  { display: flex; flex-direction: column; gap: 4px; }
+.order-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
+.order-col  { display: flex; flex-direction: column; gap: 0; }
 
-/* 추천 오더 카드 */
+/* 추천 오더 카드 — border 겹침 제거 */
 .order-card {
   cursor: pointer;
   background: var(--bg3); border: 1px solid var(--border2);
   border-radius: 0; padding: 7px 10px; transition: all 0.1s;
+  margin-top: -1px;
 }
-.order-card:hover      { background: var(--bg4); }
-.order-card.selected   { border-color: rgba(30,210,100,0.5); background: rgba(30,210,100,0.08); }
+.order-card:first-child { margin-top: 0; }
+.order-card:hover      { background: var(--bg4); z-index: 1; position: relative; }
+.order-card.selected   { border-color: var(--green); background: var(--green-dim); z-index: 1; position: relative; }
 
 .order-card-row { display: flex; align-items: center; gap: 6px; }
 .order-num      { font-size: 9px; color: var(--text3); min-width: 12px; }
 .order-name     { font-size: 12px; font-weight: 600; flex: 1; }
 .order-power    { font-size: 10px; color: var(--text2); white-space: nowrap; }
-
-.order-radio {
-  width: 14px; height: 14px; border-radius: 50%;
-  border: 2px solid var(--border); background: transparent;
-  flex-shrink: 0; display: flex; align-items: center; justify-content: center;
-}
-.order-radio.checked {
-  border-color: rgba(30,210,100,0.8); background: rgba(30,210,100,0.8);
-}
-.order-radio.checked::after {
-  content: ''; width: 5px; height: 5px;
-  border-radius: 50%; background: #000;
-}
 
 .order-adv {
   font-size: 11px; font-weight: 700;
@@ -642,16 +633,7 @@ body::before {
     <div class="left-panel-divider"></div>
 
     <!-- 추천 오더 결과 -->
-    <div class="card">
-      <!-- 속성별 메인 생존 현황 -->
-      <div id="mainSurvivalBar" style="display:none; margin-bottom:10px; padding-bottom:10px; border-bottom:1px solid var(--border2);">
-        <div style="display:flex; gap:16px; font-size:11px; flex-wrap:wrap;">
-          <span style="color:var(--text3); font-weight:700; font-size:10px; letter-spacing:1px;">메인 생존</span>
-          <span id="survivalEnemy"></span>
-          <span style="color:var(--border);">|</span>
-          <span id="survivalMy"></span>
-        </div>
-      </div>
+    <div class="card" style="padding:0;">
       <div id="orderArea">
         <div style="display:flex;align-items:center;justify-content:center;height:80px;color:var(--text3);font-size:12px;">
           상대 출전자를 선택하고 분석하세요
@@ -1135,33 +1117,8 @@ function buildEnemyGrid() {
    [JS] 좌하단 — 속성별 메인 생존 현황 렌더
    ════════════════════════════════════════════════════════════ */
 function renderMainSurvival() {
-  const bar = document.getElementById('mainSurvivalBar');
-  if (!bar) return;
-  const hasData = (enemyGuild.length || myGuild.length) && mainThreshold > 0;
-  if (!hasData) { bar.style.display = 'none'; return; }
-  bar.style.display = 'block';
-
-  const attrIcon = { red:'🔴', blue:'🔵', green:'🟢' };
-  const attrs = ['red','blue','green'];
-
-  const countSurvival = (guild, spentMap) => {
-    return attrs.map(attr => {
-      const alive = guild.filter(m =>
-        m.attr === attr &&
-        mainThreshold > 0 && m.effPower >= mainThreshold &&
-        spentCount(spentMap, m.name) < 2
-      ).length;
-      return alive > 0 ? `${attrIcon[attr]} ${alive}` : null;
-    }).filter(Boolean).join(' &nbsp;');
-  };
-
-  const enText = countSurvival(enemyGuild, enSpentMap);
-  const myText = countSurvival(myGuild, mySpentMap);
-
-  document.getElementById('survivalEnemy').innerHTML =
-    `<span style="color:var(--red);font-weight:700;font-size:10px;">상대</span> <span style="font-size:11px;">${enText || '–'}</span>`;
-  document.getElementById('survivalMy').innerHTML =
-    `<span style="color:var(--blue);font-weight:700;font-size:10px;">우리</span> <span style="font-size:11px;">${myText || '–'}</span>`;
+  // 생존 현황은 order-header 안에 통합되어 renderOrderResult에서 처리됨
+  if (lastOrders.length) renderOrderResult();
 }
 
 function selectEnemy(name) {
@@ -1270,13 +1227,10 @@ function renderOrderResult() {
       dummyRow = `<div class="dummy-impossible">⚠️ 더미로 처리 불가</div>`;
     }
 
-    const radioHtml = `<div class="order-radio ${sel ? 'checked' : ''}">
-      ${sel ? '<div style="width:5px;height:5px;border-radius:50%;background:#000;"></div>' : ''}
-    </div>`;
+    const radioHtml = ''; // 라디오버튼 제거 — 토글 선택/해제로 대체
 
     return `<div class="order-card ${sel ? 'selected' : ''}" onclick="selectOrder(${i})">
       <div class="order-card-row">
-        ${radioHtml}
         <span class="order-num">${i + 1}</span>
         <span class="abadge ${attrCls[m.attr]}">${attrIcon[m.attr]}</span>
         <span class="order-name">${dispName}${cntBadge}</span>
@@ -1290,14 +1244,30 @@ function renderOrderResult() {
     </div>`;
   }
 
+  // 속성별 생존 현황 계산 (타이틀바 우측)
+  const attrs = ['red','blue','green'];
+  const attrIconMap = { red:'🔴', blue:'🔵', green:'🟢' };
+  const countSurv = (guild, spentMap) => attrs.map(a => {
+    const n = guild.filter(m => m.attr === a && mainThreshold > 0 && m.effPower >= mainThreshold && spentCount(spentMap, m.name) < 2).length;
+    return n > 0 ? `${attrIconMap[a]}<b>${n}</b>` : null;
+  }).filter(Boolean).join(' ');
+  const enSurv = enemyGuild.length ? countSurv(enemyGuild, enSpentMap) : '';
+  const mySurv = myGuild.length    ? countSurv(myGuild,    mySpentMap) : '';
+  const survHtml = (enSurv || mySurv) ? `
+    <div style="display:flex;gap:8px;align-items:center;font-size:10px;flex-wrap:wrap;">
+      ${enSurv ? `<span style="background:var(--red);color:#fff;font-weight:700;padding:1px 6px;font-size:9px;">상대</span><span style="font-size:10px;">${enSurv}</span>` : ''}
+      ${enSurv && mySurv ? `<span style="color:var(--border2);">|</span>` : ''}
+      ${mySurv ? `<span style="background:var(--blue);color:#fff;font-weight:700;padding:1px 6px;font-size:9px;">우리</span><span style="font-size:10px;">${mySurv}</span>` : ''}
+    </div>` : '';
+
   const left  = lastOrders.slice(0, 4);
   const right = lastOrders.slice(4, 8);
 
   document.getElementById('orderArea').innerHTML = `
     <div class="order-result">
       <div class="order-header">
-        <div class="order-label">추천 오더 — 메인전력 상위 ${lastOrders.length}명</div>
-        <div class="order-hint">클릭 선택 후 출전 확정</div>
+        <div class="order-label">추천오더 — 상위 ${lastOrders.length}명</div>
+        ${survHtml}
       </div>
       <div class="order-cols">
         <div class="order-col">${left.map((o, i) => makeCard(o, i)).join('')}</div>
@@ -1352,6 +1322,15 @@ function renderOrderResult() {
    [JS] 오더 카드 선택 & 오토멘트
    ════════════════════════════════════════════════════════════ */
 function selectOrder(idx) {
+  // 토글: 이미 선택된 카드 다시 누르면 해제
+  if (selectedOrderIdx === idx) {
+    selectedOrderIdx = null;
+    pendingCustom = '';
+    const inp = document.getElementById('confirmInp');
+    if (inp) inp.value = '';
+    renderOrderResult();
+    return;
+  }
   selectedOrderIdx = idx;
   const o = lastOrders[idx];
   const m = o?.member;
