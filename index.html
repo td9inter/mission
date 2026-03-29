@@ -1107,7 +1107,9 @@ function buildMyGrid() {
     const cnt      = spentCount(mySpentMap, m.name);
     const spent    = cnt >= 2;
     const once     = cnt === 1;
-    const isMain   = mainThreshold > 0 && m.effPower >= mainThreshold;
+    const isMain   = mainThreshold   > 0 && m.mainPower >= mainThreshold;
+    const isNormal = !isMain && normalThreshold > 0 && m.mainPower >= normalThreshold;
+    const isDummy  = !isMain && !isNormal;
     const subIcon  = m.subPower > 0 ? attrIcon[m.subAttr || m.attr] : '';
     const dispName = m.name.length > 5 ? m.name.slice(0, 5) + '…' : m.name;
     const subTip   = m.subPower > 0 ? ` / 서브 ${m.subPower.toFixed(1)}만` : '';
@@ -1118,14 +1120,19 @@ function buildMyGrid() {
 
     if (isMain) {
       // 메인급 — 스틸블루 배경 + 흰글씨
-      if (spent)      { bg='rgba(91,143,212,0.12)'; border='rgba(91,143,212,0.25)'; opacity='0.5';  textColor='var(--text3)'; }
-      else if (once)  { bg='rgba(91,143,212,0.35)'; border='var(--warn)';           opacity='0.9';  textColor='#fff'; }
-      else            { bg='var(--blue)';            border='var(--blue)';           opacity='1';    textColor='#fff'; }
+      if (spent)     { bg='rgba(91,143,212,0.12)'; border='rgba(91,143,212,0.25)'; opacity='0.5'; textColor='var(--text3)'; }
+      else if (once) { bg='rgba(91,143,212,0.35)'; border='var(--warn)';           opacity='0.9'; textColor='#fff'; }
+      else           { bg='var(--blue)';            border='var(--blue)';           opacity='1';   textColor='#fff'; }
+    } else if (isNormal) {
+      // 일반급 — 연한 블루 배경 + 블루 테두리
+      if (spent)     { bg='rgba(91,143,212,0.05)'; border='rgba(91,143,212,0.15)'; opacity='0.5'; textColor='var(--text3)'; }
+      else if (once) { bg='rgba(91,143,212,0.12)'; border='var(--warn)';           opacity='0.9'; textColor='var(--text)'; }
+      else           { bg='var(--blue-dim)';        border='rgba(91,143,212,0.4)'; opacity='1';   textColor='var(--text)'; }
     } else {
-      // 더미급 — 그레이 배경 + 스틸블루 테두리
-      if (spent)      { bg='var(--bg3)'; border='var(--border2)';  opacity='0.4'; textColor='var(--text3)'; }
-      else if (once)  { bg='var(--bg3)'; border='var(--warn)';     opacity='0.8'; textColor='var(--text2)'; }
-      else            { bg='var(--bg3)'; border='var(--blue)';     opacity='1';   textColor='var(--text)'; }
+      // 더미급 — 그레이 배경 + 연한 테두리
+      if (spent)     { bg='var(--bg3)'; border='var(--border2)'; opacity='0.4'; textColor='var(--text3)'; }
+      else if (once) { bg='var(--bg3)'; border='var(--warn)';    opacity='0.8'; textColor='var(--text2)'; }
+      else           { bg='var(--bg3)'; border='var(--border)';  opacity='1';   textColor='var(--text2)'; }
     }
 
     return `<div class="dc" style="background:${bg};border-color:${border};opacity:${opacity};color:${textColor};" title="${tooltip}"><div style="position:absolute;top:5px;left:6px;right:6px;font-size:11px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-decoration:${textDecor};">${dispName} <span style="font-size:9px;font-weight:400;">(${m.bandPower.toFixed(1)}만)</span>${once ? ` <span style="font-size:9px;color:var(--warn);">1회</span>` : ''}</div><div style="position:absolute;bottom:5px;left:6px;right:6px;font-size:10px;white-space:nowrap;overflow:hidden;">${attrIcon[m.attr]} ${m.mainPower.toFixed(1)}만${m.subPower > 0 ? ` ${attrIcon[m.subAttr||m.attr]} ${m.subPower.toFixed(1)}만` : ''}</div></div>`;
@@ -1149,7 +1156,9 @@ function buildEnemyGrid() {
     const once       = cnt === 1;
     const isSelected = selectedEnemy && selectedEnemy.name === m.name;
     const subIcon    = m.subPower > 0 ? attrIcon[m.subAttr || m.attr] : '';
-    const isMain     = mainThreshold > 0 && m.effPower >= mainThreshold;
+    const isMain     = mainThreshold   > 0 && m.mainPower >= mainThreshold;
+    const isNormal   = !isMain && normalThreshold > 0 && m.mainPower >= normalThreshold;
+    const isDummy    = !isMain && !isNormal;
     const dispName   = m.name.length > 5 ? m.name.slice(0, 5) + '...' : m.name;
 
     let bg, border, opacity, textColor;
@@ -1160,14 +1169,19 @@ function buildEnemyGrid() {
       bg='rgba(90,158,114,0.2)'; border='var(--green)'; opacity='1'; textColor='var(--text)';
     } else if (isMain) {
       // 메인급 — 더스티로즈 배경 + 흰글씨
-      if (spent)     { bg='rgba(201,107,107,0.12)'; border='rgba(201,107,107,0.25)'; opacity='0.5';  textColor='var(--text3)'; }
-      else if (once) { bg='rgba(201,107,107,0.35)'; border='var(--warn)';            opacity='0.9';  textColor='#fff'; }
-      else           { bg='var(--red)';             border='var(--red)';             opacity='1';    textColor='#fff'; }
+      if (spent)     { bg='rgba(201,107,107,0.12)'; border='rgba(201,107,107,0.25)'; opacity='0.5'; textColor='var(--text3)'; }
+      else if (once) { bg='rgba(201,107,107,0.35)'; border='var(--warn)';            opacity='0.9'; textColor='#fff'; }
+      else           { bg='var(--red)';             border='var(--red)';             opacity='1';   textColor='#fff'; }
+    } else if (isNormal) {
+      // 일반급 — 연한 레드 배경 + 레드 테두리
+      if (spent)     { bg='rgba(201,107,107,0.05)'; border='rgba(201,107,107,0.15)'; opacity='0.5'; textColor='var(--text3)'; }
+      else if (once) { bg='rgba(201,107,107,0.12)'; border='var(--warn)';            opacity='0.9'; textColor='var(--text)'; }
+      else           { bg='var(--red-dim)';          border='rgba(201,107,107,0.4)'; opacity='1';   textColor='var(--text)'; }
     } else {
-      // 더미급 — 그레이 배경 + 더스티로즈 테두리
+      // 더미급 — 그레이 배경 + 연한 테두리
       if (spent)     { bg='var(--bg3)'; border='var(--border2)'; opacity='0.4'; textColor='var(--text3)'; }
       else if (once) { bg='var(--bg3)'; border='var(--warn)';    opacity='0.8'; textColor='var(--text2)'; }
-      else           { bg='var(--bg3)'; border='var(--red)';     opacity='1';   textColor='var(--text)'; }
+      else           { bg='var(--bg3)'; border='var(--border)';  opacity='1';   textColor='var(--text2)'; }
     }
 
     return `<button class="dc" onclick="selectEnemy('${m.name}')" ${spent ? 'disabled' : ''} style="background:${bg};border-color:${border};opacity:${opacity};color:${textColor};" title="${m.name}"><div style="position:absolute;top:5px;left:6px;right:6px;font-size:11px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-decoration:${textDecor};">${dispName} <span style="font-size:9px;font-weight:400;">(${m.bandPower.toFixed(1)}만)</span>${once ? ` <span style="font-size:9px;color:var(--warn);">1회</span>` : ''}</div><div style="position:absolute;bottom:5px;left:6px;right:6px;font-size:10px;white-space:nowrap;overflow:hidden;">${attrIcon[m.attr]} ${m.mainPower.toFixed(1)}만${m.subPower > 0 ? ` ${attrIcon[m.subAttr||m.attr]} ${m.subPower.toFixed(1)}만` : ''}</div></button>`;
@@ -1191,7 +1205,7 @@ function renderMainSurvival() {
     return attrs.map(attr => {
       const alive = guild.filter(m =>
         m.attr === attr &&
-        mainThreshold > 0 && m.effPower >= mainThreshold &&
+        mainThreshold > 0 && m.mainPower >= mainThreshold &&
         spentCount(spentMap, m.name) < 2
       ).length;
       return alive > 0 ? `${attrIcon[attr]} ${alive}` : null;
