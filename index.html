@@ -234,9 +234,15 @@ body::before {
   border: 1px solid var(--border); height: 28px; overflow: hidden;
 }
 .thresh-inp {
-  width: 68px; background: var(--bg3); border: none; outline: none;
+  width: 60px; background: var(--bg3); border: none; outline: none;
   font-size: 11px; font-weight: 700; color: var(--text);
-  font-family: 'Noto Sans KR', sans-serif; text-align: center; padding: 0 6px;
+  font-family: 'Noto Sans KR', sans-serif; text-align: center; padding: 0 4px;
+}
+.thresh-label {
+  font-size: 9px; font-weight: 700; color: var(--text3);
+  background: var(--bg4); padding: 0 5px;
+  display: flex; align-items: center; border-right: 1px solid var(--border);
+  white-space: nowrap;
 }
 
 /* 접속자 레이블 */
@@ -583,9 +589,13 @@ div.dc { cursor: default; }
       <span class="upload-sub"  id="enUSub">CSV 선택</span>
     </label>
     <div class="thresh-wrap">
+      <span class="thresh-label">메인</span>
       <input id="mainThreshInp" type="number" min="1" placeholder="수치(만)"
         class="thresh-inp"
-        oninput="previewThresh(this.value)"
+        onkeydown="if(event.key==='Enter')saveThresh()">
+      <span class="thresh-label">일반</span>
+      <input id="normalThreshInp" type="number" min="1" placeholder="수치(만)"
+        class="thresh-inp"
         onkeydown="if(event.key==='Enter')saveThresh()">
       <button class="btn-sm-accent" onclick="saveThresh()">확인</button>
     </div>
@@ -826,7 +836,8 @@ let selectedEnemy = null;
 let selectedOrderIdx = null;
 let lastOrders = [];
 let pendingCustom = '';
-let mainThreshold = 0;                          // 메인급 기준 전투력 (만 단위, 0=미설정)
+let mainThreshold   = 0;                        // 메인급 기준 전투력 (만 단위, 0=미설정)
+let normalThreshold = 0;                        // 일반급 기준 전투력 (만 단위, 0=미설정, 이하=더미)
 let dummyBandFilter = 'basic';                  // 더미 구간 토글: 'basic'|'50'|'100'|'150'|'200'
 
 
@@ -894,6 +905,16 @@ function initFirebaseListeners() {
     const inp = document.getElementById('mainThreshInp');
     if (inp && val) inp.value = val;
     buildEnemyGrid();
+  });
+
+  // 일반급 기준 수치
+  fbWatch('normalThreshold', val => {
+    normalThreshold = val || 0;
+    const inp = document.getElementById('normalThreshInp');
+    if (inp && val) inp.value = val;
+    buildEnemyGrid();
+    buildMyGrid();
+    renderMainSurvival();
   });
 
   // 우리 소진 현황
@@ -1028,18 +1049,23 @@ function parseAttr(s) {
 
 
 /* ════════════════════════════════════════════════════════════
-   [JS] 메인급 기준 수치 저장
+   [JS] 메인급/일반급 기준 수치 저장
    ════════════════════════════════════════════════════════════ */
 function saveThresh() {
   if (!requireEdit()) return;
-  const val = parseInt(document.getElementById('mainThreshInp').value || '0');
-  if (!val || val <= 0) { alert('수치를 입력해주세요 (예: 500 = 500만)'); return; }
-  mainThreshold = val;
-  fbSet('mainThreshold', val);
+  const mVal = parseInt(document.getElementById('mainThreshInp').value   || '0');
+  const nVal = parseInt(document.getElementById('normalThreshInp').value || '0');
+  if (!mVal || mVal <= 0) { alert('메인 기준 수치를 입력해주세요 (예: 500 = 500만)'); return; }
+  if (!nVal || nVal <= 0) { alert('일반 기준 수치를 입력해주세요 (예: 300 = 300만)'); return; }
+  if (nVal >= mVal)       { alert('일반 기준은 메인 기준보다 낮아야 합니다.'); return; }
+  mainThreshold   = mVal;
+  normalThreshold = nVal;
+  fbSet('mainThreshold',   mVal);
+  fbSet('normalThreshold', nVal);
   buildEnemyGrid();
+  buildMyGrid();
   renderMainSurvival();
 }
-function previewThresh(val) { /* 확인 버튼 눌렀을 때만 반영 */ }
 
 
 /* ════════════════════════════════════════════════════════════
@@ -1639,12 +1665,14 @@ function fullReset() {
     db.ref('myGuildName').remove(),  db.ref('enemyGuildName').remove(),
     db.ref('mySpentMap').remove(),   db.ref('enSpentMap').remove(),
     db.ref('selectedEnemy').remove(), db.ref('onlineUsers').remove(),
+    db.ref('mainThreshold').remove(), db.ref('normalThreshold').remove(),
   ]).then(() => {
     myGuild = []; enemyGuild = [];
     myGuildName = ''; enemyGuildName = '';
     mySpentMap = {}; enSpentMap = {};
     onlineUsers = {}; mySlot = null;
     selectedEnemy = null; lastOrders = []; selectedOrderIdx = null;
+    mainThreshold = 0; normalThreshold = 0;
     // UI 초기화
     const resetUpload = (labelId, subId, ubId, labelText) => {
       document.getElementById(labelId).textContent = labelText;
@@ -1658,6 +1686,10 @@ function fullReset() {
     document.getElementById('orderArea').innerHTML    = '<div style="display:flex;align-items:center;justify-content:center;height:80px;color:var(--text3);font-size:12px;">상대 출전자를 선택하고 분석하세요</div>';
     const ddLabel = document.getElementById('ddLabel');
     if (ddLabel) ddLabel.textContent = '';
+    const mInp = document.getElementById('mainThreshInp');
+    const nInp = document.getElementById('normalThreshInp');
+    if (mInp) mInp.value = '';
+    if (nInp) nInp.value = '';
     renderMySpent(); renderEnSpent(); renderOnlineSlots();
   });
 }
