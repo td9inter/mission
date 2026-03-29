@@ -1847,13 +1847,14 @@ function renderAttendanceModal() {
     el.innerHTML = '<div class="no-data">우리 길드 CSV를 먼저 불러오세요</div>';
     return;
   }
-  el.innerHTML = myGuild.map(m => {
-    const checked = !!attendanceMap[m.name];
-    return `<div class="attendance-item ${checked ? 'checked' : ''}" onclick="toggleAttendance('${m.name}')">
-      <input type="checkbox" ${checked ? 'checked' : ''} onclick="event.stopPropagation();toggleAttendance('${m.name}')">
-      <label>${m.name}</label>
-    </div>`;
-  }).join('');
+  el.innerHTML = `<div style="display:grid;grid-template-columns:1fr 1fr;gap:2px;">` +
+    myGuild.map(m => {
+      const checked = !!attendanceMap[m.name];
+      return `<div class="attendance-item ${checked ? 'checked' : ''}" onclick="toggleAttendance('${m.name}')">
+        <input type="checkbox" ${checked ? 'checked' : ''} onclick="event.stopPropagation();toggleAttendance('${m.name}')">
+        <label>${m.name}</label>
+      </div>`;
+    }).join('') + `</div>`;
 }
 
 
