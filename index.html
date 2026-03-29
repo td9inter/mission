@@ -350,6 +350,7 @@ body::before {
   width: 120px; max-width: 120px; height: 50px;
   flex-shrink: 0; flex-grow: 0;
   border: 1px solid transparent;
+  border-left: 3px solid transparent;
   box-sizing: border-box;
   overflow: hidden;
   padding: 0;
@@ -358,6 +359,7 @@ body::before {
   position: relative;
   text-align: left;
 }
+.dc.present { border-left-color: var(--green) !important; }
 div.dc { cursor: default; }
 .dc[disabled] { cursor: not-allowed; }
 
@@ -388,9 +390,11 @@ div.dc { cursor: default; }
   cursor: pointer;
   background: var(--bg3); border: 1px solid var(--border2);
   border-radius: 0; padding: 7px 10px; transition: all 0.1s;
+  border-left: 3px solid transparent;
 }
 .order-card:hover      { background: var(--bg4); }
-.order-card.selected   { border-color: rgba(30,210,100,0.5); background: rgba(30,210,100,0.08); }
+.order-card.selected   { border-color: rgba(30,210,100,0.5); background: rgba(30,210,100,0.08); border-left-color: var(--green); }
+.order-card.present    { border-left-color: var(--green); }
 
 .order-card-row { display: flex; align-items: center; gap: 6px; }
 .order-num      { font-size: 9px; color: var(--text3); min-width: 12px; }
@@ -1202,7 +1206,7 @@ function buildMyGrid() {
       else if (once) { bg='rgba(91,143,212,0.12)'; border='var(--warn)';           opacity='0.9'; textColor='var(--text)'; }
       else           { bg='var(--blue-dim)';        border='rgba(91,143,212,0.4)'; opacity='1';   textColor='var(--text)'; }
     }
-    return `<div class="dc" style="background:${bg};border-color:${border};opacity:${opacity};color:${textColor};" title="${tooltip}"><div style="position:absolute;top:5px;left:6px;right:6px;font-size:11px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-decoration:${textDecor};">${dispName} <span style="font-size:9px;font-weight:400;">(${m.bandPower.toFixed(1)}만)</span>${once ? ` <span style="font-size:9px;color:var(--warn);">1회</span>` : ''}</div><div style="position:absolute;bottom:5px;left:6px;right:6px;font-size:10px;white-space:nowrap;overflow:hidden;">${attrIcon[m.attr]} ${m.mainPower.toFixed(1)}만${m.subPower > 0 ? ` ${attrIcon[m.subAttr||m.attr]} ${m.subPower.toFixed(1)}만` : ''}</div></div>`;
+    return `<div class="dc ${!!attendanceMap[m.name] ? 'present' : ''}" style="background:${bg};border-color:${border};opacity:${opacity};color:${textColor};" title="${tooltip}"><div style="position:absolute;top:5px;left:6px;right:6px;font-size:11px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-decoration:${textDecor};">${dispName} <span style="font-size:9px;font-weight:400;">(${m.bandPower.toFixed(1)}만)</span>${once ? ` <span style="font-size:9px;color:var(--warn);">1회</span>` : ''}</div><div style="position:absolute;bottom:5px;left:6px;right:6px;font-size:10px;white-space:nowrap;overflow:hidden;">${attrIcon[m.attr]} ${m.mainPower.toFixed(1)}만${m.subPower > 0 ? ` ${attrIcon[m.subAttr||m.attr]} ${m.subPower.toFixed(1)}만` : ''}</div></div>`;
   }
 
   function makeDummyCard(m) {
@@ -1428,9 +1432,6 @@ function renderOrderResult() {
     const cntBadge   = cnt === 1 ? `<span style="font-size:9px;color:var(--warn);margin-left:2px;">1회</span>` : '';
     const sel        = selectedOrderIdx === i;
     const dispName   = m.name.length > 5 ? m.name.slice(0, 5) + '…' : m.name;
-    const presentDot = m.isPresent
-      ? `<span style="width:6px;height:6px;border-radius:50%;background:var(--green);display:inline-block;margin-left:3px;flex-shrink:0;" title="실참자"></span>`
-      : `<span style="width:6px;height:6px;border-radius:50%;background:var(--border);display:inline-block;margin-left:3px;flex-shrink:0;" title="미확인"></span>`;
     const dummyBadge = !sel
       ? (d && !d.impossible
           ? `<span style="font-size:9px;color:var(--gold);margin-left:3px;">(${d.needed}명)</span>`
@@ -1448,11 +1449,11 @@ function renderOrderResult() {
       dummyRow = `<div class="dummy-impossible">⚠️ 더미로 처리 불가</div>`;
     }
 
-    return `<div class="order-card ${sel ? 'selected' : ''}" style="${!m.isPresent ? 'opacity:0.6;' : ''}" onclick="selectOrder(${i})">
+    return `<div class="order-card ${sel ? 'selected' : ''} ${m.isPresent ? 'present' : ''}" onclick="selectOrder(${i})">
       <div class="order-card-row">
         <span class="order-num">${i + 1}</span>
         <span class="abadge">${attrIcon[m.attr]}</span>
-        <span class="order-name" style="display:flex;align-items:center;gap:2px;">${dispName}${cntBadge}${presentDot}${dummyBadge}</span>
+        <span class="order-name">${dispName}${cntBadge}${dummyBadge}</span>
         <span class="order-power">${m.mainPower.toFixed(1)}만</span>
         <span class="order-adv ${advCls}" style="color:${advColor};background:transparent;padding:0;min-width:14px;text-align:center;">${advMark}</span>
       </div>
