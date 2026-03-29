@@ -536,6 +536,34 @@ div.dc { cursor: default; }
 .dummy-tag    { background: var(--gold-dim);  border: 1px solid rgba(255,215,0,0.2); color: var(--gold);    font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 0; font-family: 'Noto Sans KR',sans-serif; }
 .dummy-tag.ok { background: var(--green-dim); border-color: rgba(68,204,102,0.2);   color: var(--green); }
 
+/* 더미급 한 줄 카드 */
+.dc-dummy {
+  display: inline-flex; align-items: center; gap: 4px;
+  width: 120px; height: 22px;
+  flex-shrink: 0; flex-grow: 0;
+  border: 1px solid transparent;
+  box-sizing: border-box;
+  padding: 0 6px;
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: 10px; font-weight: 500;
+  overflow: hidden; white-space: nowrap;
+  cursor: pointer;
+}
+button.dc-dummy { cursor: pointer; }
+button.dc-dummy[disabled] { cursor: not-allowed; }
+.dc-dummy-divider {
+  width: 100%; height: 1px;
+  background: var(--border2); margin: 5px 0 4px;
+}
+/* 속성 작은 원 */
+.attr-dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  flex-shrink: 0; display: inline-block;
+}
+.attr-dot.red   { background: var(--red); }
+.attr-dot.blue  { background: var(--blue); }
+.attr-dot.green { background: var(--green); }
+
 /* 더미 구간 토글 버튼 */
 .dummy-band-toggle {
   display: flex; gap: 4px; flex-wrap: wrap;
@@ -1103,40 +1131,51 @@ function buildMyGrid() {
     return;
   }
   const attrIcon = { red:'🔴', blue:'🔵', green:'🟢' };
-  grid.innerHTML = myGuild.map(m => {
-    const cnt      = spentCount(mySpentMap, m.name);
-    const spent    = cnt >= 2;
-    const once     = cnt === 1;
+
+  const mains   = [], normals = [], dummies = [];
+  myGuild.forEach(m => {
     const isMain   = mainThreshold   > 0 && m.mainPower >= mainThreshold;
     const isNormal = !isMain && normalThreshold > 0 && m.mainPower >= normalThreshold;
-    const isDummy  = !isMain && !isNormal;
-    const subIcon  = m.subPower > 0 ? attrIcon[m.subAttr || m.attr] : '';
+    if (isMain) mains.push(m); else if (isNormal) normals.push(m); else dummies.push(m);
+  });
+
+  function makeMainNormalCard(m) {
+    const cnt      = spentCount(mySpentMap, m.name);
+    const spent    = cnt >= 2, once = cnt === 1;
+    const isMain   = mainThreshold > 0 && m.mainPower >= mainThreshold;
     const dispName = m.name.length > 5 ? m.name.slice(0, 5) + '…' : m.name;
     const subTip   = m.subPower > 0 ? ` / 서브 ${m.subPower.toFixed(1)}만` : '';
     const tooltip  = `${m.name}\n메인 ${m.mainPower.toFixed(1)}만${subTip}`;
-
-    let bg, border, opacity, textColor;
     const textDecor = spent ? 'line-through' : 'none';
-
+    let bg, border, opacity, textColor;
     if (isMain) {
-      // 메인급 — 스틸블루 배경 + 흰글씨
       if (spent)     { bg='rgba(91,143,212,0.12)'; border='rgba(91,143,212,0.25)'; opacity='0.5'; textColor='var(--text3)'; }
       else if (once) { bg='rgba(91,143,212,0.35)'; border='var(--warn)';           opacity='0.9'; textColor='#fff'; }
       else           { bg='var(--blue)';            border='var(--blue)';           opacity='1';   textColor='#fff'; }
-    } else if (isNormal) {
-      // 일반급 — 연한 블루 배경 + 블루 테두리
+    } else {
       if (spent)     { bg='rgba(91,143,212,0.05)'; border='rgba(91,143,212,0.15)'; opacity='0.5'; textColor='var(--text3)'; }
       else if (once) { bg='rgba(91,143,212,0.12)'; border='var(--warn)';           opacity='0.9'; textColor='var(--text)'; }
       else           { bg='var(--blue-dim)';        border='rgba(91,143,212,0.4)'; opacity='1';   textColor='var(--text)'; }
-    } else {
-      // 더미급 — 그레이 배경 + 연한 테두리
-      if (spent)     { bg='var(--bg3)'; border='var(--border2)'; opacity='0.4'; textColor='var(--text3)'; }
-      else if (once) { bg='var(--bg3)'; border='var(--warn)';    opacity='0.8'; textColor='var(--text2)'; }
-      else           { bg='var(--bg3)'; border='var(--border)';  opacity='1';   textColor='var(--text2)'; }
     }
-
     return `<div class="dc" style="background:${bg};border-color:${border};opacity:${opacity};color:${textColor};" title="${tooltip}"><div style="position:absolute;top:5px;left:6px;right:6px;font-size:11px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-decoration:${textDecor};">${dispName} <span style="font-size:9px;font-weight:400;">(${m.bandPower.toFixed(1)}만)</span>${once ? ` <span style="font-size:9px;color:var(--warn);">1회</span>` : ''}</div><div style="position:absolute;bottom:5px;left:6px;right:6px;font-size:10px;white-space:nowrap;overflow:hidden;">${attrIcon[m.attr]} ${m.mainPower.toFixed(1)}만${m.subPower > 0 ? ` ${attrIcon[m.subAttr||m.attr]} ${m.subPower.toFixed(1)}만` : ''}</div></div>`;
-  }).join('');
+  }
+
+  function makeDummyCard(m) {
+    const cnt  = spentCount(mySpentMap, m.name);
+    const spent = cnt >= 2, once = cnt === 1;
+    const dispName = m.name.length > 5 ? m.name.slice(0, 5) + '…' : m.name;
+    const textDecor = spent ? 'line-through' : 'none';
+    let bg, border, opacity, textColor;
+    if (spent)     { bg='var(--bg3)'; border='var(--border2)'; opacity='0.4'; textColor='var(--text3)'; }
+    else if (once) { bg='var(--bg3)'; border='var(--warn)';    opacity='0.8'; textColor='var(--text2)'; }
+    else           { bg='var(--bg3)'; border='var(--border)';  opacity='1';   textColor='var(--text2)'; }
+    return `<div class="dc-dummy" style="background:${bg};border-color:${border};opacity:${opacity};color:${textColor};"><span class="attr-dot ${m.attr}"></span><span style="flex:1;overflow:hidden;text-overflow:ellipsis;text-decoration:${textDecor};">${dispName}</span><span style="font-size:9px;color:var(--text3);flex-shrink:0;">${m.mainPower.toFixed(1)}만${once ? ' <span style="color:var(--warn);">1회</span>' : ''}</span></div>`;
+  }
+
+  const topHtml    = [...mains, ...normals].map(makeMainNormalCard).join('');
+  const divider    = dummies.length ? '<div class="dc-dummy-divider" style="width:100%;"></div>' : '';
+  const dummyHtml  = dummies.map(makeDummyCard).join('');
+  grid.innerHTML   = topHtml + divider + dummyHtml;
 }
 
 
@@ -1150,42 +1189,54 @@ function buildEnemyGrid() {
     return;
   }
   const attrIcon = { red:'🔴', blue:'🔵', green:'🟢' };
-  grid.innerHTML = enemyGuild.map(m => {
+
+  const mains = [], normals = [], dummies = [];
+  enemyGuild.forEach(m => {
+    const isMain   = mainThreshold   > 0 && m.mainPower >= mainThreshold;
+    const isNormal = !isMain && normalThreshold > 0 && m.mainPower >= normalThreshold;
+    if (isMain) mains.push(m); else if (isNormal) normals.push(m); else dummies.push(m);
+  });
+
+  function makeMainNormalCard(m) {
     const cnt        = spentCount(enSpentMap, m.name);
-    const spent      = cnt >= 2;
-    const once       = cnt === 1;
+    const spent      = cnt >= 2, once = cnt === 1;
     const isSelected = selectedEnemy && selectedEnemy.name === m.name;
-    const subIcon    = m.subPower > 0 ? attrIcon[m.subAttr || m.attr] : '';
-    const isMain     = mainThreshold   > 0 && m.mainPower >= mainThreshold;
-    const isNormal   = !isMain && normalThreshold > 0 && m.mainPower >= normalThreshold;
-    const isDummy    = !isMain && !isNormal;
+    const isMain     = mainThreshold > 0 && m.mainPower >= mainThreshold;
     const dispName   = m.name.length > 5 ? m.name.slice(0, 5) + '...' : m.name;
-
+    const textDecor  = spent ? 'line-through' : 'none';
     let bg, border, opacity, textColor;
-    const textDecor = spent ? 'line-through' : 'none';
-
     if (isSelected) {
-      // 선택됨 — 세이지그린
       bg='rgba(90,158,114,0.2)'; border='var(--green)'; opacity='1'; textColor='var(--text)';
     } else if (isMain) {
-      // 메인급 — 더스티로즈 배경 + 흰글씨
       if (spent)     { bg='rgba(201,107,107,0.12)'; border='rgba(201,107,107,0.25)'; opacity='0.5'; textColor='var(--text3)'; }
       else if (once) { bg='rgba(201,107,107,0.35)'; border='var(--warn)';            opacity='0.9'; textColor='#fff'; }
       else           { bg='var(--red)';             border='var(--red)';             opacity='1';   textColor='#fff'; }
-    } else if (isNormal) {
-      // 일반급 — 연한 레드 배경 + 레드 테두리
+    } else {
       if (spent)     { bg='rgba(201,107,107,0.05)'; border='rgba(201,107,107,0.15)'; opacity='0.5'; textColor='var(--text3)'; }
       else if (once) { bg='rgba(201,107,107,0.12)'; border='var(--warn)';            opacity='0.9'; textColor='var(--text)'; }
       else           { bg='var(--red-dim)';          border='rgba(201,107,107,0.4)'; opacity='1';   textColor='var(--text)'; }
-    } else {
-      // 더미급 — 그레이 배경 + 연한 테두리
-      if (spent)     { bg='var(--bg3)'; border='var(--border2)'; opacity='0.4'; textColor='var(--text3)'; }
-      else if (once) { bg='var(--bg3)'; border='var(--warn)';    opacity='0.8'; textColor='var(--text2)'; }
-      else           { bg='var(--bg3)'; border='var(--border)';  opacity='1';   textColor='var(--text2)'; }
     }
-
     return `<button class="dc" onclick="selectEnemy('${m.name}')" ${spent ? 'disabled' : ''} style="background:${bg};border-color:${border};opacity:${opacity};color:${textColor};" title="${m.name}"><div style="position:absolute;top:5px;left:6px;right:6px;font-size:11px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-decoration:${textDecor};">${dispName} <span style="font-size:9px;font-weight:400;">(${m.bandPower.toFixed(1)}만)</span>${once ? ` <span style="font-size:9px;color:var(--warn);">1회</span>` : ''}</div><div style="position:absolute;bottom:5px;left:6px;right:6px;font-size:10px;white-space:nowrap;overflow:hidden;">${attrIcon[m.attr]} ${m.mainPower.toFixed(1)}만${m.subPower > 0 ? ` ${attrIcon[m.subAttr||m.attr]} ${m.subPower.toFixed(1)}만` : ''}</div></button>`;
-  }).join('');
+  }
+
+  function makeDummyCard(m) {
+    const cnt   = spentCount(enSpentMap, m.name);
+    const spent = cnt >= 2, once = cnt === 1;
+    const isSelected = selectedEnemy && selectedEnemy.name === m.name;
+    const dispName = m.name.length > 5 ? m.name.slice(0, 5) + '...' : m.name;
+    const textDecor = spent ? 'line-through' : 'none';
+    let bg, border, opacity, textColor;
+    if (isSelected)    { bg='rgba(90,158,114,0.2)'; border='var(--green)'; opacity='1';   textColor='var(--text)'; }
+    else if (spent)    { bg='var(--bg3)'; border='var(--border2)'; opacity='0.4'; textColor='var(--text3)'; }
+    else if (once)     { bg='var(--bg3)'; border='var(--warn)';    opacity='0.8'; textColor='var(--text2)'; }
+    else               { bg='var(--bg3)'; border='var(--border)';  opacity='1';   textColor='var(--text2)'; }
+    return `<button class="dc-dummy" onclick="selectEnemy('${m.name}')" ${spent ? 'disabled' : ''} style="background:${bg};border-color:${border};opacity:${opacity};color:${textColor};"><span class="attr-dot ${m.attr}"></span><span style="flex:1;overflow:hidden;text-overflow:ellipsis;text-decoration:${textDecor};">${dispName}</span><span style="font-size:9px;color:var(--text3);flex-shrink:0;">${m.mainPower.toFixed(1)}만${once ? ' <span style="color:var(--warn);">1회</span>' : ''}</span></button>`;
+  }
+
+  const topHtml   = [...mains, ...normals].map(makeMainNormalCard).join('');
+  const divider   = dummies.length ? '<div class="dc-dummy-divider" style="width:100%;"></div>' : '';
+  const dummyHtml = dummies.map(makeDummyCard).join('');
+  grid.innerHTML  = topHtml + divider + dummyHtml;
 }
 
 /* ════════════════════════════════════════════════════════════
