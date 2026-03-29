@@ -1276,7 +1276,7 @@ function calcDummy(ep, mp, advVal) {
    [JS] 추천 오더 결과 렌더
    ════════════════════════════════════════════════════════════ */
 function renderOrderResult() {
-  if (!lastOrders.length) return;
+
   const attrIcon = { red:'🔴', blue:'🔵', green:'🟢' };
 
   function makeCard(o, i) {
@@ -1328,7 +1328,7 @@ function renderOrderResult() {
   ).join('');
 
   const emptyMsg = lastOrders.length === 0
-    ? `<div class="no-data" style="padding:20px 0;">해당 구간에 해당하는 추천 덱이 없습니다</div>` : '';
+    ? `<div class="no-data" style="padding:16px 0;">없음</div>` : '';
 
   document.getElementById('orderArea').innerHTML = `
     <div class="order-result">
