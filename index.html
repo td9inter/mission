@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>길드전 오더 시스템 (v1.1)</title>
+<title>길드전 오더 시스템 (v1.2)</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&display=swap');
 
@@ -530,6 +530,19 @@ div.dc { cursor: default; }
 .dummy-tag    { background: var(--gold-dim);  border: 1px solid rgba(255,215,0,0.2); color: var(--gold);    font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 0; font-family: 'Noto Sans KR',sans-serif; }
 .dummy-tag.ok { background: var(--green-dim); border-color: rgba(68,204,102,0.2);   color: var(--green); }
 
+/* 더미 구간 토글 버튼 */
+.dummy-band-toggle {
+  display: flex; gap: 4px; flex-wrap: wrap;
+}
+.dummy-band-btn {
+  padding: 3px 10px; font-size: 11px; font-weight: 700;
+  background: var(--bg3); color: var(--text2);
+  border: 1px solid var(--border); border-radius: 0; cursor: pointer;
+  font-family: 'Noto Sans KR', sans-serif; transition: all 0.15s;
+}
+.dummy-band-btn:hover { border-color: var(--text2); color: var(--text); }
+.dummy-band-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+
 /* ════════════════════════════════════════════════════════════
    [CSS] 스크롤바
    ════════════════════════════════════════════════════════════ */
@@ -742,15 +755,12 @@ div.dc { cursor: default; }
     <div style="flex:1;min-width:200px;">
       <div style="font-size:9px;font-weight:700;color:rgba(255,255,255,0.5);letter-spacing:2px;margin-bottom:6px;">버전 & 업데이트</div>
       <div style="font-size:10px;color:rgba(255,255,255,0.85);line-height:2;">
-        <span style="color:#7bc8ff;font-weight:700;">v1.1</span>
-        <span style="color:rgba(255,255,255,0.5);margin-left:8px;">— 2026.03.08</span>
+        <span style="color:#7bc8ff;font-weight:700;">v1.2</span>
+        <span style="color:rgba(255,255,255,0.5);margin-left:8px;">— 2026.03.29</span>
       </div>
       <div style="font-size:10px;color:rgba(255,255,255,0.6);line-height:2;margin-top:2px;">
-        · 덱 버튼 2단 구조 / 반전력·서브속성(cols[9]) 표시 수정<br>
-        · 추천오더 토글선택 / 정렬 개편 / 연보라박스 제거<br>
-        · 색상 정책 통일 / 소진 영역 파랑·빨강 배경<br>
-        · 경고 후 입력값 자동 초기화 / SUB_RATE 상수화<br>
-        · 탑바 구조 조정 / 모바일 순위숫자 숨김
+        · 추천오더 더미 구간 토글 추가 [기본/50/100/150/200]<br>
+        · 구간별 필터링으로 더미 활용 추천 덱 분리 표시
       </div>
       <div style="font-size:10px;color:rgba(255,255,255,0.85);line-height:2;margin-top:6px;">
         <span style="color:#7bc8ff;font-weight:700;">v1.0</span>
@@ -777,10 +787,10 @@ div.dc { cursor: default; }
 const ATTR_ADV  = 1.25;  // 우세 상성 배율
 const ATTR_SAME = 1.0;   // 동일 상성 배율
 const ATTR_DIS  = 0.8;   // 약세 상성 배율
-const SAFETY    = 0.87;  // 안전기준 (상대를 내 실효전력의 n% 이하로)
+const SAFETY    = 0.90;  // 안전기준 (상대를 내 실효전력의 n% 이하로)
 const DUMMY_MAX = 480;   // 더미 최대 인원 (완전약화 기준)
 const BAND_SIZE = 6;     // 1반 인원
-const SUB_RATE  = 0.7;  // 서브덱 전력 반영 비율
+const SUB_RATE  = 0.35;  // 서브덱 전력 반영 비율
 
 
 /* ════════════════════════════════════════════════════════════
@@ -817,6 +827,7 @@ let selectedOrderIdx = null;
 let lastOrders = [];
 let pendingCustom = '';
 let mainThreshold = 0;                          // 메인급 기준 전투력 (만 단위, 0=미설정)
+let dummyBandFilter = 'basic';                  // 더미 구간 토글: 'basic'|'50'|'100'|'150'|'200'
 
 
 /* ════════════════════════════════════════════════════════════
@@ -1226,10 +1237,26 @@ function analyze() {
     return b.eff - a.eff;
   });
 
-  const topN = scored.slice(0, Math.min(8, scored.length));
-  lastOrders = topN.map(m => ({ member: m, dummy: calcDummy(ep, m.effPower, m.advVal) }));
+  // 더미 구간 필터링
+  const allWithDummy = scored.map(m => ({ member: m, dummy: calcDummy(ep, m.effPower, m.advVal) }));
+  let filtered;
+  if (dummyBandFilter === 'basic') {
+    filtered = allWithDummy.filter(o => !o.dummy); // 더미 없이 이기는 경우
+  } else {
+    const ranges = { '50': [50,99], '100': [100,149], '150': [150,199], '200': [200, Infinity] };
+    const [lo, hi] = ranges[dummyBandFilter];
+    filtered = allWithDummy.filter(o => o.dummy && !o.dummy.impossible && o.dummy.needed >= lo && o.dummy.needed <= hi);
+  }
+  const topN = filtered.slice(0, 8);
+  lastOrders = topN;
   selectedOrderIdx = null;
   renderOrderResult();
+}
+
+function setDummyBandFilter(key) {
+  dummyBandFilter = key;
+  selectedOrderIdx = null;
+  analyze();
 }
 
 function calcDummy(ep, mp, advVal) {
@@ -1295,12 +1322,22 @@ function renderOrderResult() {
   const left  = lastOrders.slice(0, 4);
   const right = lastOrders.slice(4, 8);
 
+  const bandLabels = { basic:'기본', '50':'50', '100':'100', '150':'150', '200':'200' };
+  const bandToggleHtml = Object.entries(bandLabels).map(([key, label]) =>
+    `<button class="dummy-band-btn ${dummyBandFilter === key ? 'active' : ''}" onclick="setDummyBandFilter('${key}')">${label}</button>`
+  ).join('');
+
+  const emptyMsg = lastOrders.length === 0
+    ? `<div class="no-data" style="padding:20px 0;">해당 구간에 해당하는 추천 덱이 없습니다</div>` : '';
+
   document.getElementById('orderArea').innerHTML = `
     <div class="order-result">
-      <div class="order-header">
+      <div class="dummy-band-toggle">${bandToggleHtml}</div>
+      <div class="order-header" style="margin-top:10px;">
         <div class="order-label">추천 오더 — 효율기준 상위 ${lastOrders.length}명</div>
         <div class="order-hint">클릭 선택 후 출전 확정</div>
       </div>
+      ${emptyMsg}
       <div class="order-cols">
         <div class="order-col">${left.map((o, i) => makeCard(o, i)).join('')}</div>
         <div class="order-col">${right.map((o, i) => makeCard(o, i + 4)).join('')}</div>
