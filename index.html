@@ -1361,16 +1361,18 @@ function analyze() {
 
   const ATK_MULT = { '1': ATTR_ADV, '0': ATTR_SAME, '-1': ATTR_DIS };
   const scored = avail.map(m => {
-    const a    = adv(m.attr, eAttr);
-    const mult = ATK_MULT[String(a)];
-    const eff  = m.effPower * mult;
-    const ratio = eff / (ep || 1);
-    return { ...m, eff, ratio, advVal: a, mult };
+    const a         = adv(m.attr, eAttr);
+    const mult      = ATK_MULT[String(a)];
+    const eff       = m.effPower * mult;
+    const ratio     = eff / (ep || 1);
+    const isPresent = !!attendanceMap[m.name];
+    const sortScore = eff * (isPresent ? 1.5 : 1.0); // 정렬용만, 더미 계산엔 미반영
+    return { ...m, eff, ratio, advVal: a, mult, isPresent, sortScore };
   }).sort((a, b) => {
     const aOk = ep <= a.eff * SAFETY, bOk = ep <= b.eff * SAFETY;
     if (aOk && !bOk) return -1; if (!aOk && bOk) return 1;
-    if (aOk && bOk)  return a.effPower - b.effPower;
-    return b.eff - a.eff;
+    if (aOk && bOk)  return a.sortScore - b.sortScore;
+    return b.sortScore - a.sortScore;
   });
 
   // 더미 구간 필터링
@@ -1421,11 +1423,14 @@ function renderOrderResult() {
     let advCls = 'adv-draw', advTxt = '동';
     if (m.ratio >= 1.1)  { advCls = 'adv-win';  advTxt = '우'; }
     else if (m.ratio < 0.85) { advCls = 'adv-lose'; advTxt = '열'; }
-    const advColor  = m.advVal === 1 ? 'var(--success)' : m.advVal === -1 ? 'var(--danger)' : 'var(--text3)';
-    const advMark   = m.advVal === 1 ? '▲' : m.advVal === -1 ? '▼' : '=';
-    const cntBadge  = cnt === 1 ? `<span style="font-size:9px;color:var(--warn);margin-left:2px;">1회</span>` : '';
-    const sel       = selectedOrderIdx === i;
-    const dispName  = m.name.length > 5 ? m.name.slice(0, 5) + '…' : m.name;
+    const advColor   = m.advVal === 1 ? 'var(--success)' : m.advVal === -1 ? 'var(--danger)' : 'var(--text3)';
+    const advMark    = m.advVal === 1 ? '▲' : m.advVal === -1 ? '▼' : '=';
+    const cntBadge   = cnt === 1 ? `<span style="font-size:9px;color:var(--warn);margin-left:2px;">1회</span>` : '';
+    const sel        = selectedOrderIdx === i;
+    const dispName   = m.name.length > 5 ? m.name.slice(0, 5) + '…' : m.name;
+    const presentDot = m.isPresent
+      ? `<span style="width:6px;height:6px;border-radius:50%;background:var(--green);display:inline-block;margin-left:3px;flex-shrink:0;" title="실참자"></span>`
+      : `<span style="width:6px;height:6px;border-radius:50%;background:var(--border);display:inline-block;margin-left:3px;flex-shrink:0;" title="미확인"></span>`;
     const dummyBadge = !sel
       ? (d && !d.impossible
           ? `<span style="font-size:9px;color:var(--gold);margin-left:3px;">(${d.needed}명)</span>`
@@ -1443,11 +1448,11 @@ function renderOrderResult() {
       dummyRow = `<div class="dummy-impossible">⚠️ 더미로 처리 불가</div>`;
     }
 
-    return `<div class="order-card ${sel ? 'selected' : ''}" onclick="selectOrder(${i})">
+    return `<div class="order-card ${sel ? 'selected' : ''}" style="${!m.isPresent ? 'opacity:0.6;' : ''}" onclick="selectOrder(${i})">
       <div class="order-card-row">
         <span class="order-num">${i + 1}</span>
         <span class="abadge">${attrIcon[m.attr]}</span>
-        <span class="order-name">${dispName}${cntBadge}${dummyBadge}</span>
+        <span class="order-name" style="display:flex;align-items:center;gap:2px;">${dispName}${cntBadge}${presentDot}${dummyBadge}</span>
         <span class="order-power">${m.mainPower.toFixed(1)}만</span>
         <span class="order-adv ${advCls}" style="color:${advColor};background:transparent;padding:0;min-width:14px;text-align:center;">${advMark}</span>
       </div>
