@@ -102,10 +102,6 @@ body::before {
   border: 1px solid var(--border); font-size: 11px; padding: 5px 12px;
 }
 .btn-ghost:hover { border-color: var(--text2); color: var(--text); }
-.btn-warn {
-  background: rgba(210,153,34,0.15); color: var(--warn);
-  border: 1px solid rgba(210,153,34,0.3); font-size: 11px; padding: 5px 12px;
-}
 .btn-danger {
   background: rgba(218,54,51,0.12); color: var(--danger);
   border: 1px solid rgba(218,54,51,0.3);
@@ -164,11 +160,8 @@ body::before {
 .divider { height: 1px; background: var(--border2); margin: 12px 0; }
 .no-data { font-size: 11px; color: var(--text3); text-align: center; padding: 12px 0; }
 
-/* 속성 뱃지 */
-.abadge { font-size: 13px; flex-shrink: 0; }
-
 /* ════════════════════════════════════════════════════════════
-   [CSS] 상단바 영역 — 데이터 로드 / 메인급 기준 / 접속자
+   [CSS] 상단바 영역 — 데이터 로드 / 기준수치 / 접속자
    ════════════════════════════════════════════════════════════ */
 .topbar-outer {
   position: sticky; top: 0; z-index: 50;
@@ -183,12 +176,6 @@ body::before {
   display: grid;
   grid-template-columns: auto 1fr auto;
   align-items: center; gap: 0;
-}
-
-.topbar-label {
-  font-size: 10px; font-weight: 700; letter-spacing: 2px;
-  color: var(--text3); text-transform: uppercase; white-space: nowrap;
-  margin-right: 8px;
 }
 
 /* 구분선 */
@@ -838,8 +825,12 @@ button.dc-dummy[disabled] { cursor: not-allowed; }
         <span style="color:rgba(255,255,255,0.5);margin-left:8px;">— 2026.03.29</span>
       </div>
       <div style="font-size:10px;color:rgba(255,255,255,0.6);line-height:2;margin-top:2px;">
-        · 추천오더 더미 구간 토글 추가 [기본/50/100/150/200]<br>
-        · 구간별 필터링으로 더미 활용 추천 덱 분리 표시
+        · 탑바 기준수치 2개로 확장 (메인기준 / 일반기준)<br>
+        · 메인 / 일반 / 더미 3단계 등급 분류 (mainPower 기준)<br>
+        · 더미급 한 줄 카드 + 그룹 분리 렌더 / 속성 CSS 원 표시<br>
+        · 추천오더 더미 구간 토글 [기본/50/100/150/200]<br>
+        · 실참자 출첵 모달 (Firebase 실시간 공유) / 추천 정렬 ×1.5 보너스<br>
+        · 실참자 좌측 세로 바 표시 (추천카드 + 우리 길드 탭)
       </div>
       <div style="font-size:10px;color:rgba(255,255,255,0.85);line-height:2;margin-top:6px;">
         <span style="color:#7bc8ff;font-weight:700;">v1.0</span>
@@ -1428,9 +1419,9 @@ function renderOrderResult() {
   function makeCard(o, i) {
     const m   = o.member, d = o.dummy;
     const cnt = spentCount(mySpentMap, m.name);
-    let advCls = 'adv-draw', advTxt = '동';
-    if (m.ratio >= 1.1)  { advCls = 'adv-win';  advTxt = '우'; }
-    else if (m.ratio < 0.85) { advCls = 'adv-lose'; advTxt = '열'; }
+    let advCls = 'adv-draw';
+    if (m.ratio >= 1.1)       { advCls = 'adv-win';  }
+    else if (m.ratio < 0.85)  { advCls = 'adv-lose'; }
     const advColor   = m.advVal === 1 ? 'var(--success)' : m.advVal === -1 ? 'var(--danger)' : 'var(--text3)';
     const advMark    = m.advVal === 1 ? '▲' : m.advVal === -1 ? '▼' : '=';
     const cntBadge   = cnt === 1 ? `<span style="font-size:9px;color:var(--warn);margin-left:2px;">1회</span>` : '';
@@ -1806,8 +1797,6 @@ function fullReset() {
     resetUpload('enULabel', 'enUSub', 'enUB', '상대 길드');
     document.getElementById('enemyBtnGrid').innerHTML = '<div class="btn-grid-empty">상대 길드 CSV를 로드하면 여기에 선택 버튼이 나타납니다</div>';
     document.getElementById('orderArea').innerHTML    = '<div style="display:flex;align-items:center;justify-content:center;height:80px;color:var(--text3);font-size:12px;">상대 출전자를 선택하고 분석하세요</div>';
-    const ddLabel = document.getElementById('ddLabel');
-    if (ddLabel) ddLabel.textContent = '';
     const mInp = document.getElementById('mainThreshInp');
     const nInp = document.getElementById('normalThreshInp');
     if (mInp) mInp.value = '';
