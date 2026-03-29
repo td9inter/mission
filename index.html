@@ -536,6 +536,28 @@ div.dc { cursor: default; }
 .dummy-tag    { background: var(--gold-dim);  border: 1px solid rgba(255,215,0,0.2); color: var(--gold);    font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 0; font-family: 'Noto Sans KR',sans-serif; }
 .dummy-tag.ok { background: var(--green-dim); border-color: rgba(68,204,102,0.2);   color: var(--green); }
 
+.btn-attendance {
+  font-size: 10px; font-weight: 700;
+  padding: 2px 10px; height: 20px;
+  background: var(--green-dim); color: var(--green);
+  border: 1px solid rgba(90,158,114,0.4); border-radius: 0;
+  cursor: pointer; font-family: 'Noto Sans KR', sans-serif;
+  white-space: nowrap; flex-shrink: 0;
+}
+.btn-attendance:hover { background: rgba(90,158,114,0.2); }
+
+/* 출첵 모달 목록 아이템 */
+.attendance-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 7px 4px; border-bottom: 1px solid var(--border2);
+  cursor: pointer;
+}
+.attendance-item:last-child { border-bottom: none; }
+.attendance-item:hover { background: var(--bg3); }
+.attendance-item input[type="checkbox"] { width: 15px; height: 15px; cursor: pointer; flex-shrink: 0; }
+.attendance-item label { font-size: 12px; font-weight: 500; cursor: pointer; flex: 1; }
+.attendance-item.checked label { color: var(--green); font-weight: 700; }
+
 /* 더미급 한 줄 카드 */
 .dc-dummy {
   display: inline-flex; align-items: center; gap: 4px;
@@ -667,8 +689,20 @@ button.dc-dummy[disabled] { cursor: not-allowed; }
 </div>
 
 <!-- ════════════════════════════════════════════════════════════
-     [HTML] 메인 그리드 — 좌패널 + 우패널
+     [HTML] 출첵 모달
      ════════════════════════════════════════════════════════════ -->
+<div id="attendanceModal" class="modal-overlay">
+  <div class="modal-box" style="width:320px;max-height:80vh;display:flex;flex-direction:column;">
+    <div class="modal-title">실참자 출석 체크</div>
+    <div class="modal-subtitle">길드전 참여 인원을 체크하세요</div>
+    <div id="attendanceList" style="overflow-y:auto;flex:1;margin-bottom:12px;"></div>
+    <div class="modal-btns">
+      <button class="btn-secondary" onclick="closeAttendanceModal()">닫기</button>
+    </div>
+  </div>
+</div>
+
+
 <div class="main-grid">
 
   <!-- ── 좌패널: 덱 선택 탭 + 추천 오더 ── -->
@@ -729,7 +763,10 @@ button.dc-dummy[disabled] { cursor: not-allowed; }
 
     <!-- 덱 소모 수동 체크 -->
     <div class="card card-md">
-      <div class="sec-title st-neutral" style="color:var(--text);margin-bottom:8px;">덱 소모 수동 체크</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+        <div class="sec-title st-neutral" style="color:var(--text);margin-bottom:0;">덱 소모 수동 체크</div>
+        <button class="btn-attendance" onclick="openAttendanceModal()">출첵</button>
+      </div>
       <div class="deck-check-grid">
 
         <!-- 우리 길드 -->
@@ -867,6 +904,7 @@ let pendingCustom = '';
 let mainThreshold   = 0;                        // 메인급 기준 전투력 (만 단위, 0=미설정)
 let normalThreshold = 0;                        // 일반급 기준 전투력 (만 단위, 0=미설정, 이하=더미)
 let dummyBandFilter = 'basic';                  // 더미 구간 토글: 'basic'|'50'|'100'|'150'|'200'
+let attendanceMap   = {};                        // 실참자 체크맵 { name: true }
 
 
 /* ════════════════════════════════════════════════════════════
@@ -959,6 +997,13 @@ function initFirebaseListeners() {
     renderEnSpent();
     buildEnemyGrid();
     renderMainSurvival();
+  });
+
+  // 실참자 출첵
+  fbWatch('attendanceMap', val => {
+    attendanceMap = val || {};
+    renderAttendanceModal();
+    if (lastOrders.length) renderOrderResult();
   });
 
   // 패스워드 목록
@@ -1731,6 +1776,7 @@ function fullReset() {
     db.ref('mySpentMap').remove(),   db.ref('enSpentMap').remove(),
     db.ref('selectedEnemy').remove(), db.ref('onlineUsers').remove(),
     db.ref('mainThreshold').remove(), db.ref('normalThreshold').remove(),
+    db.ref('attendanceMap').remove(),
   ]).then(() => {
     myGuild = []; enemyGuild = [];
     myGuildName = ''; enemyGuildName = '';
@@ -1738,6 +1784,7 @@ function fullReset() {
     onlineUsers = {}; mySlot = null;
     selectedEnemy = null; lastOrders = []; selectedOrderIdx = null;
     mainThreshold = 0; normalThreshold = 0;
+    attendanceMap = {};
     // UI 초기화
     const resetUpload = (labelId, subId, ubId, labelText) => {
       document.getElementById(labelId).textContent = labelText;
@@ -1767,6 +1814,46 @@ function canEdit()     { return mySlot !== null; }
 function requireEdit() {
   if (!canEdit()) { alert('수정 권한이 없습니다.\n패스워드를 입력해주세요.'); openPasswordModal(); return false; }
   return true;
+}
+
+
+/* ════════════════════════════════════════════════════════════
+   [JS] 실참자 출첵 모달
+   ════════════════════════════════════════════════════════════ */
+function openAttendanceModal() {
+  if (!requireEdit()) return;
+  document.getElementById('attendanceModal').style.display = 'flex';
+  renderAttendanceModal();
+}
+
+function closeAttendanceModal() {
+  document.getElementById('attendanceModal').style.display = 'none';
+}
+
+function toggleAttendance(name) {
+  if (!requireEdit()) return;
+  const cur = attendanceMap[name] || false;
+  if (cur) {
+    db.ref(`attendanceMap/${name}`).remove();
+  } else {
+    db.ref(`attendanceMap/${name}`).set(true);
+  }
+}
+
+function renderAttendanceModal() {
+  const el = document.getElementById('attendanceList');
+  if (!el) return;
+  if (!myGuild.length) {
+    el.innerHTML = '<div class="no-data">우리 길드 CSV를 먼저 불러오세요</div>';
+    return;
+  }
+  el.innerHTML = myGuild.map(m => {
+    const checked = !!attendanceMap[m.name];
+    return `<div class="attendance-item ${checked ? 'checked' : ''}" onclick="toggleAttendance('${m.name}')">
+      <input type="checkbox" ${checked ? 'checked' : ''} onclick="event.stopPropagation();toggleAttendance('${m.name}')">
+      <label>${m.name}</label>
+    </div>`;
+  }).join('');
 }
 
 
@@ -1846,6 +1933,9 @@ document.addEventListener('click', e => {
 /* 모달 바깥 클릭 시 닫기 */
 document.getElementById('pwModal').addEventListener('click', function(e) {
   if (e.target === this) closePasswordModal();
+});
+document.getElementById('attendanceModal').addEventListener('click', function(e) {
+  if (e.target === this) closeAttendanceModal();
 });
 
 
