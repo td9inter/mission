@@ -1419,7 +1419,11 @@ function calcDummy(ep, mp, advVal) {
    ════════════════════════════════════════════════════════════ */
 function renderOrderResult() {
 
-  const attrIcon = { red:'🔴', blue:'🔵', green:'🟢' };
+  const attrIcon = {
+    red:   `<span class="attr-dot red"  ></span>`,
+    blue:  `<span class="attr-dot blue" ></span>`,
+    green: `<span class="attr-dot green"></span>`
+  };
 
   function makeCard(o, i) {
     const m   = o.member, d = o.dummy;
@@ -1452,7 +1456,7 @@ function renderOrderResult() {
     return `<div class="order-card ${sel ? 'selected' : ''} ${m.isPresent ? 'present' : ''}" onclick="selectOrder(${i})">
       <div class="order-card-row">
         <span class="order-num">${i + 1}</span>
-        <span class="abadge">${attrIcon[m.attr]}</span>
+        <span style="display:flex;align-items:center;flex-shrink:0;">${attrIcon[m.attr]}</span>
         <span class="order-name">${dispName}${cntBadge}${dummyBadge}</span>
         <span class="order-power">${m.mainPower.toFixed(1)}만</span>
         <span class="order-adv ${advCls}" style="color:${advColor};background:transparent;padding:0;min-width:14px;text-align:center;">${advMark}</span>
