@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>위고식스 엔젤유닛 ~나의 날개를 찾아서~</title>
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<link href="https://cdn.jsdelivr.net/npm/galmuri@2.40.3/dist/galmuri.css" rel="stylesheet">
+<style>
+html,body{margin:0;height:100%;background:#111;overflow:hidden;touch-action:none;-webkit-user-select:none;user-select:none}
+#wrap{position:fixed;inset:0;display:flex;align-items:center;justify-content:center}
+canvas{image-rendering:pixelated;background:#000;touch-action:none;display:block}
+</style>
+</head>
+<body>
+<div id="wrap"><canvas id="c"></canvas></div>
+<script>
+'use strict';
+/* =====================================================================
+   ★ 여기만 고치면 돼 (설정 영역) ★
+   - 이미지 파일은 이 html 파일과 같은 폴더에 넣어줘
+       캐릭터   : 1_wy_1.png / 2_xiu_1.png / 3_tk_1.png / 4_zr_1.png / 5_ku_1.png
+       날개     : 1_wy_2.png / 2_xiu_2.png / 3_tk_2.png / 4_zr_2.png / 5_ku_2.png
+       타이틀   : title.png (가로가 긴 로고 이미지, 투명 배경 PNG)
+                  표시 폭이 320px이라 원본은 그 배수(예: 640x280, 960x420)로 만들면 선명함
+   - 이미지가 없으면 임시 네모 캐릭터/노란 날개/텍스트 타이틀로 대신 나와
+   ===================================================================== */
+const YOUTUBE_URL   = 'https://www.youtube.com/';      // ← 유튜브 주소
+const YOUTUBE_LABEL = '▶ YouTube에서 이어보기';         // ← 링크 문구
+const FACE_RIGHT    = true;   // 도트가 오른쪽을 보고 있으면 true, 왼쪽이면 false
+const COL_PINK  = '#ffa8cc';  // 좌측/보조 버튼 색
+const COL_GREEN = '#b6f26b';  // 우측/주요 버튼 색
+
+// 실패 멘트 (공통)
+const FAIL_LINES = ['이번엔 닿지 못했어... 다시 시작해볼까'];
+
+// 크레딧 ('*'로 시작하면 제목 스타일). 마지막에 유튜브 링크가 자동으로 붙어
+const CREDITS = [
+  '*위고식스 엔젤유닛', '~나의 날개를 찾아서~', '',
+  '*Story & Game Design', '에이드', '',
+  '*Pixel Art', '에이드', '',
+  '*Special Thanks', '플레이해 준 모두에게', '', 'Thank you for playing!', ''
+];
+
+// 캐릭터별 대사 (줄 하나 = 탭 한 번. 줄바꿈은 \n)
+const DEMO_PROLOGUE = ['……여기는 어디지?', '저 높은 곳 어딘가에 내 날개가 있다고 했어.', '좋아, 올라가 보자!'];
+const DEMO_NORMAL   = ['닿았다……! 이게 내 날개야.', '그런데 이게 끝이 아닌 것 같아.', '더 높은 곳에 진짜가 남아 있어.'];
+const DEMO_TRUE     = ['드디어…… 진짜 내 날개를 찾았어.', '끝까지 함께해 줘서 고마워.', '이제 어디든 날아갈 수 있어!'];
+const CHARS = [
+  {name:'우연',  id:'1_wy',  color:'#ff8fa3', prologue:DEMO_PROLOGUE, normalEnding:DEMO_NORMAL, trueEnding:DEMO_TRUE},
+  {name:'시우',  id:'2_xiu', color:'#8fd0ff', prologue:DEMO_PROLOGUE, normalEnding:DEMO_NORMAL, trueEnding:DEMO_TRUE},
+  {name:'태강',  id:'3_tk',  color:'#b7f08f', prologue:DEMO_PROLOGUE, normalEnding:DEMO_NORMAL, trueEnding:DEMO_TRUE},
+  {name:'제로',  id:'4_zr',  color:'#ffd27f', prologue:DEMO_PROLOGUE, normalEnding:DEMO_NORMAL, trueEnding:DEMO_TRUE},
+  {name:'쿠우타', id:'5_ku',  color:'#d3a6ff', prologue:DEMO_PROLOGUE, normalEnding:DEMO_NORMAL, trueEnding:DEMO_TRUE},
+];
+
+// 난이도: speed=가로 이동속도(px/초), width=발판 폭, maxd=다음 발판이 좌우로 벌어지는 최대 거리
+const MODES = {
+  normal:{name:'노말', speed:75, width:150, maxd:90},
+  record:{name:'기록', speed:140, width:110, maxd:120},
+  hard:  {name:'하드', speed:180, width:80,  maxd:150},
+};
+const CLEAR_SCORE = 9220, PER = 20;       // 발판 하나당 20점, 9220점에서 클리어
+/* ===================================================================== */
+
+const TOP = CLEAR_SCORE / PER;            // 마지막(날개) 발판 번호 = 461
+const W = 360, H = 640, SP = 90, GRAV = 1400, JUMP = 640, FEET = 14, PW = 72;
+const FONT = '"Galmuri11","Galmuri9","Malgun Gothic","Apple SD Gothic Neo","Noto Sans KR",monospace';
+const cv = document.getElementById('c'), ctx = cv.getContext('2d');
+let K = 1;
+function resize(){
+  const s = Math.min(innerWidth / W, innerHeight / H);
+  cv.style.width = W * s + 'px'; cv.style.height = H * s + 'px';
+  K = Math.min(4, Math.max(1, Math.ceil(s * (devicePixelRatio || 1))));
+  cv.width = W * K; cv.height = H * K;
+}
+addEventListener('resize', resize); resize();
+
+/* ---------- 이미지 ---------- */
+function loadImg(src){ const o = {img:new Image(), ok:false}; o.img.onload = () => o.ok = true; o.img.src = src; return o; }
+CHARS.forEach(c => { c.spr = loadImg(c.id + '_1.png'); c.wing = loadImg(c.id + '_2.png'); });
+const TITLE_IMG = loadImg('title.png'); // 타이틀 이미지(없으면 텍스트 타이틀로 대체)
+
+function drawChar(c, cx, bot, w, flip){
+  const o = c.spr;
+  if(o.ok){
+    const h = w * o.img.naturalHeight / o.img.naturalWidth;
+    ctx.save(); ctx.translate(cx, bot - h); if(flip) ctx.scale(-1, 1);
+    ctx.drawImage(o.img, -w/2, 0, w, h); ctx.restore();
+  } else {
+    const x = cx - w/2, y = bot - w;
+    ctx.fillStyle = '#2b2140'; ctx.fillRect(x-3, y-3, w+6, w+6);
+    ctx.fillStyle = c.color; ctx.fillRect(x, y, w, w);
+    ctx.fillStyle = '#2b2140'; const e = w/8, dx = flip ? -w/8 : w/8;
+    ctx.fillRect(cx - w/4 + dx - e/2, y + w*0.35, e, e*1.4);
+    ctx.fillRect(cx + w/4 + dx - e/2, y + w*0.35, e, e*1.4);
+  }
+}
+function drawWing(c, cx, bot, w){
+  const o = c.wing;
+  if(o.ok){
+    const h = w * o.img.naturalHeight / o.img.naturalWidth;
+    ctx.drawImage(o.img, cx - w/2, bot - h, w, h);
+  } else {
+    ctx.fillStyle = '#2b2140'; ctx.fillRect(cx-w/2-3, bot-w*0.5-3, w+6, w*0.5+6);
+    ctx.fillStyle = '#ffe680'; ctx.fillRect(cx-w/2, bot-w*0.5, w, w*0.5);
+    ctx.fillStyle = '#fff'; ctx.fillRect(cx-w/2+6, bot-w*0.5+6, w*0.35, w*0.2);
+    ctx.fillRect(cx+w*0.1, bot-w*0.5+6, w*0.35, w*0.2);
+  }
+}
+
+/* ---------- 하늘 ---------- */
+const SKY = {day:['#5fb8ff','#d6f1ff'], dusk:['#7b5ea7','#ffb07a'], night:['#0a0e2a','#2b2f6b'], dawn:['#4b4a8f','#ff9fb2']};
+const SEQ = {normal:['day','dusk','night'], hard:['night','dawn','day'], record:['day','day','day']};
+const hex = c => [1,3,5].map(i => parseInt(c.substr(i,2), 16));
+const mixA = (a,b,t) => { const A = hex(a), B = hex(b); return A.map((v,i) => Math.round(v + (B[i]-v)*t)); };
+const mixC = (a,b,t) => 'rgb(' + mixA(a,b,t).join(',') + ')';
+let cloudCol = '#fff', cloudShade = '#cfe6f7', night = 0;
+const bg = {seq:'record', t:0};
+let seed = 7; const rng = () => (seed = (seed*16807) % 2147483647) / 2147483647;
+const stars = Array.from({length:60}, () => ({x:rng()*W, y:rng()*H*0.9, p:rng()*6}));
+const bgClouds = Array.from({length:6}, () => ({x:rng()*W, y:rng()*H, s:0.6+rng()*0.8}));
+let time = 0;
+
+function drawSky(seq, t){
+  const ks = SEQ[seq];
+  let i0, i1, u;
+  if(t < 0.5){ i0 = 0; i1 = 1; u = t*2; } else { i0 = 1; i1 = 2; u = (t-0.5)*2; }
+  const a = SKY[ks[i0]], b = SKY[ks[i1]];
+  const topA = mixA(a[0], b[0], u), botA = mixA(a[1], b[1], u);
+  const lum = (0.299*topA[0] + 0.587*topA[1] + 0.114*topA[2]) / 255;
+  night = Math.max(0, Math.min(1, (0.55 - lum) / 0.4));
+  const g = ctx.createLinearGradient(0, 0, 0, H);
+  g.addColorStop(0, 'rgb(' + topA.join(',') + ')'); g.addColorStop(1, 'rgb(' + botA.join(',') + ')');
+  ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+  cloudCol = mixC('#ffffff', '#c9cfff', night);
+  cloudShade = mixC('#cfe6f7', '#7d84c9', night);
+  if(night > 0.02){
+    stars.forEach(s => {
+      ctx.globalAlpha = night * (0.55 + 0.45*Math.sin(time*2 + s.p));
+      ctx.fillStyle = '#fff'; ctx.fillRect(Math.round(s.x), Math.round(s.y), 2, 2);
+    });
+    ctx.globalAlpha = 1;
+  }
+  const par = G.screen === 'game' ? camY : time*20;
+  ctx.globalAlpha = 0.35 * (1 - night*0.6);
+  bgClouds.forEach(c => {
+    const y = ((c.y + par*0.15) % (H+80)) - 40;
+    const x = ((c.x + time*3*c.s) % (W+120)) - 60;
+    drawCloud(x, y, 70*c.s + 30);
+  });
+  ctx.globalAlpha = 1;
+}
+
+/* ---------- 구름 발판 (도트 느낌) ---------- */
+function drawCloud(cx, top, w){
+  const q = v => Math.round(v/4)*4;
+  const ww = q(w), x = q(cx - w/2), y = q(top);
+  ctx.fillStyle = cloudShade; ctx.fillRect(x+8, y+12, ww-16, 8);
+  ctx.fillStyle = cloudCol;
+  ctx.fillRect(x+4, y, ww-8, 16); ctx.fillRect(x, y+4, ww, 8);
+  ctx.fillRect(x + q(ww*0.15), y-8,  q(ww*0.25), 8);
+  ctx.fillRect(x + q(ww*0.45), y-12, q(ww*0.28), 12);
+  ctx.fillRect(x + q(ww*0.52), y-16, q(ww*0.14), 4);
+}
+
+/* ---------- UI 도구 ---------- */
+let hits = [];
+function zone(x,y,w,h,cb){ hits.push({x,y,w,h,cb}); }
+function T(str, x, y, size, col, align, stroke){
+  ctx.font = size + 'px ' + FONT; ctx.textAlign = align || 'center'; ctx.textBaseline = 'middle';
+  if(stroke){ ctx.lineWidth = 4; ctx.strokeStyle = stroke; ctx.lineJoin = 'round'; ctx.strokeText(str, x, y); }
+  ctx.fillStyle = col; ctx.fillText(str, x, y);
+}
+function btn(x,y,w,h,label,cb,o){
+  o = o || {}; zone(x,y,w,h,cb);
+  ctx.fillStyle = '#2b2140'; ctx.fillRect(x-3, y-3, w+6, h+9);
+  ctx.fillStyle = o.color || COL_GREEN; ctx.fillRect(x, y, w, h);
+  ctx.fillStyle = 'rgba(255,255,255,.35)'; ctx.fillRect(x, y, w, 5);
+  ctx.fillStyle = 'rgba(0,0,0,.18)'; ctx.fillRect(x, y+h-6, w, 6);
+  T(label, x + w/2, y + h/2, o.size || 18, '#2b2140');
+}
+function wrap(text, maxW, size){
+  ctx.font = size + 'px ' + FONT;
+  const out = [];
+  text.split('\n').forEach(seg => {
+    let cur = '';
+    for(const ch of seg){ if(ctx.measureText(cur + ch).width > maxW){ out.push(cur); cur = ch; } else cur += ch; }
+    out.push(cur);
+  });
+  return out;
+}
+function openLink(){ window.open(YOUTUBE_URL, '_blank'); }
+
+/* ---------- 상태 ---------- */
+const G = {screen:'title', state:'play', timer:0, toast:null, result:null};
+let sel = -1, mode = 'normal', plats = [], p = null, camY = 0, dlg = null, cr = null;
+let best = 0; try{ best = +localStorage.getItem('hgx_best') || 0; }catch(e){}
+const sy = y => 430 - (y - camY);
+
+function genPlat(i){
+  const m = MODES[mode], prev = plats[i-1];
+  let w = m.width; if(i === TOP && mode !== 'record') w += 50;
+  // 발판이 화면 끝에서 반사되게 해서(텔레포트 없이) 항상 폭의 70% 이상이 화면 안에 걸치게 함
+  const margin = w * 0.35;
+  const lo = margin, hi = Math.max(margin, W - margin);
+  const range = hi - lo;
+  let cx = prev.cx + (Math.random()*2 - 1) * m.maxd;
+  if(range > 0){
+    let t = (cx - lo) % (2*range); if(t < 0) t += 2*range;
+    cx = t <= range ? lo + t : hi - (t - range);
+  } else cx = W/2;
+  return {cx, w};
+}
+function ensure(n){
+  const lim = mode === 'record' ? n : Math.min(n, TOP);
+  while(plats.length <= lim) plats.push(genPlat(plats.length));
+}
+function over(x, pl){
+  if(pl.w >= W) return true;
+  return Math.abs(x - pl.cx) <= pl.w/2 + FEET;
+}
+
+function startGame(m){
+  mode = m; plats = [{cx:W/2, w:W+60}]; ensure(20);
+  p = {x:W/2, y:0, vy:0, dir:1, grounded:true, pi:0, coyote:0, jbuf:0, maxIdx:0};
+  camY = 0; G.screen = 'game'; G.state = 'play'; G.timer = 0;
+  bg.seq = SEQ[m] ? m : 'record'; bg.t = 0;
+}
+function toTitle(){ G.screen = 'title'; }
+function needSel(fn){ if(sel < 0){ G.toast = {text:'캐릭터를 먼저 골라줘!', t:1.6}; } else fn(); }
+
+function startDialog(lines, o){ dlg = {lines, i:0, n:0, wi:-1, opts:o || {}, bg:(o && o.bg) || {seq:'record', t:0}}; G.screen = 'dialog'; }
+function ensureWrap(){ const d = dlg; if(d.wi !== d.i){ d.wrapLines = wrap(d.lines[d.i], 304, 17); d.total = d.wrapLines.join('').length; d.wi = d.i; } }
+function advance(){
+  ensureWrap(); const d = dlg;
+  if(d.n < d.total){ d.n = d.total; return; }
+  if(d.i < d.lines.length - 1){ d.i++; d.n = 0; return; }
+  if(d.opts.onEnd) d.opts.onEnd();
+}
+function startStory(){
+  startDialog(CHARS[sel].prologue, {bg:{seq:'record', t:0}, onEnd:() => startGame('normal')});
+}
+function endStory(){
+  const c = CHARS[sel];
+  if(mode === 'normal'){
+    startDialog(c.normalEnding, {wing:true, bg:{seq:'normal', t:1}, onEnd:() => { G.screen = 'choice'; }});
+  } else {
+    startDialog(c.trueEnding, {wing:true, bg:{seq:'hard', t:1}, onEnd:() => { cr = {y:H+20, done:false}; G.screen = 'credits'; }});
+  }
+}
+function failGame(){
+  G.state = 'dead';
+  if(mode === 'record'){
+    const s = p.maxIdx * PER;
+    if(s > best){ best = s; try{ localStorage.setItem('hgx_best', best); }catch(e){} }
+    G.result = {score:s, best}; G.screen = 'result';
+  } else {
+    startDialog(FAIL_LINES, {bg:{seq:bg.seq, t:bg.t}, choices:[
+      {label:'메인으로 가기', cb:toTitle},
+      {label:'다시 시작하기', cb:() => startGame(mode)}
+    ]});
+  }
+}
+
+/* ---------- 조작 ---------- */
+function actDir(){ if(G.screen === 'game' && G.state === 'play') p.dir *= -1; }
+function actJump(){ if(G.screen === 'game' && G.state === 'play') p.jbuf = 0.12; }
+addEventListener('keydown', e => {
+  const k = e.key.toLowerCase();
+  if(k === 'q' && !e.repeat) actDir();
+  else if(k === 'e') actJump();
+  else if((k === ' ' || k === 'enter') && G.screen === 'dialog' && !e.repeat){
+    ensureWrap(); const d = dlg, last = d.i === d.lines.length-1;
+    if(!(d.opts.choices && last && d.n >= d.total)) advance();
+  }
+});
+cv.addEventListener('pointerdown', e => {
+  e.preventDefault();
+  const r = cv.getBoundingClientRect();
+  const x = (e.clientX - r.left) / r.width * W, y = (e.clientY - r.top) / r.height * H;
+  for(let i = hits.length - 1; i >= 0; i--){
+    const h = hits[i];
+    if(x >= h.x && x <= h.x + h.w && y >= h.y && y <= h.y + h.h){ h.cb(); return; }
+  }
+});
+
+/* ---------- 업데이트 ---------- */
+function land(i){
+  p.y = i * SP; p.vy = 0; p.grounded = true; p.pi = i;
+  if(i > p.maxIdx) p.maxIdx = i;
+  if(mode !== 'record' && i === TOP){ G.state = 'clear'; G.timer = 0; }
+}
+function update(dt){
+  time += dt;
+  if(G.toast){ G.toast.t -= dt; if(G.toast.t <= 0) G.toast = null; }
+  if(G.screen === 'dialog'){ ensureWrap(); dlg.n = Math.min(dlg.total, dlg.n + 30*dt); return; }
+  if(G.screen === 'credits'){
+    if(!cr.done){
+      cr.y -= 40*dt;
+      if(cr.y + CREDITS.length*34 <= 380){ cr.y = 380 - CREDITS.length*34; cr.done = true; }
+    }
+    return;
+  }
+  if(G.screen !== 'game') return;
+  if(G.state === 'clear'){ G.timer += dt; if(G.timer > 1.8) endStory(); return; }
+  if(G.state !== 'play') return;
+  const m = MODES[mode];
+  p.x += p.dir * m.speed * dt;
+  if(p.x <= PW/2){ p.x = PW/2; p.dir = 1; }
+  else if(p.x >= W - PW/2){ p.x = W - PW/2; p.dir = -1; }
+  p.jbuf -= dt; p.coyote -= dt;
+  if(p.grounded && !over(p.x, plats[p.pi])){ p.grounded = false; p.coyote = 0.1; p.vy = 0; }
+  if(p.jbuf > 0 && (p.grounded || p.coyote > 0)){ p.vy = JUMP; p.grounded = false; p.coyote = 0; p.jbuf = 0; }
+  if(!p.grounded){
+    const py = p.y; p.vy -= GRAV * dt; p.y += p.vy * dt;
+    if(p.vy <= 0){
+      const lim = mode === 'record' ? 1e9 : TOP;
+      const hi = Math.min(Math.floor((py + 0.01) / SP), lim), lo = Math.max(0, Math.ceil((p.y - 0.01) / SP));
+      for(let i = hi; i >= lo; i--){ ensure(i); if(over(p.x, plats[i])){ land(i); break; } }
+    }
+  }
+  if(p.y > camY) camY += (p.y - camY) * Math.min(1, dt * 10);
+  bg.t = mode === 'record' ? 0 : Math.min(1, camY / (TOP * SP));
+  if(sy(p.y) > H + 70) failGame();
+}
+
+/* ---------- 화면 그리기 ---------- */
+function drawTitle(){
+  drawSky('record', 0);
+  if(TITLE_IMG.ok){
+    const iw = 320, ih = iw * TITLE_IMG.img.naturalHeight / TITLE_IMG.img.naturalWidth;
+    ctx.drawImage(TITLE_IMG.img, (W - iw)/2, 40, iw, ih);
+  } else {
+    T('위고식스 엔젤유닛', W/2, 88, 32, '#fff', 'center', '#3a3a7a');
+    T('~나의 날개를 찾아서~', W/2, 130, 20, '#fff5c4', 'center', '#3a3a7a');
+  }
+  drawCloud(W/2, 404, 344);
+  for(let i = 0; i < 5; i++){
+    const cx = 20 + i*64 + 32; let by = 404;
+    if(i === sel) by -= Math.abs(Math.sin(time*6)) * 10;
+    drawChar(CHARS[i], cx, by, 56, false);
+    zone(20 + i*64, 320, 64, 100, () => { sel = i; });
+    if(i === sel) T('▼', cx, 300 - Math.abs(Math.sin(time*6))*4, 16, '#fff', 'center', '#3a3a7a');
+  }
+  T(sel < 0 ? '캐릭터를 골라줘!' : CHARS[sel].name, W/2, 462, 20, '#fff', 'center', '#3a3a7a');
+  btn(20, 520, 152, 60, '스토리모드', () => needSel(startStory), {color:COL_PINK});
+  btn(188, 520, 152, 60, '기록모드', () => needSel(() => startGame('record')), {color:COL_GREEN});
+  T('PC  Q: 방향전환 / E: 점프', W/2, 612, 13, '#fff', 'center', '#3a3a7a');
+}
+
+function drawGame(){
+  drawSky(bg.seq, bg.t);
+  const lim = mode === 'record' ? 1e9 : TOP;
+  const lo = Math.max(0, Math.floor((camY - 260) / SP)), hi = Math.min(lim, Math.ceil((camY + 470) / SP));
+  ensure(hi);
+  const c = CHARS[sel];
+  for(let i = lo; i <= hi; i++){
+    const pl = plats[i], top = sy(i * SP);
+    if(i === 0){
+      drawCloud(W/2, top, W + 60);
+      ctx.fillStyle = cloudCol; ctx.fillRect(0, top + 20, W, H);
+      continue;
+    }
+    drawCloud(pl.cx, top, pl.w);
+    if(mode !== 'record' && i === TOP) drawWing(c, pl.cx, top - 4 + Math.sin(time*4)*3, 80);
+  }
+  const flip = FACE_RIGHT ? p.dir < 0 : p.dir > 0;
+  drawChar(c, p.x, sy(p.y), PW, flip);
+  // HUD
+  ctx.fillStyle = 'rgba(30,20,60,.75)'; ctx.fillRect(90, 10, 180, 46);
+  T('SCORE', W/2, 24, 12, '#ffd45e');
+  T(String(p.maxIdx * PER).padStart(4, '0'), W/2, 43, 22, '#fff');
+  T(MODES[mode].name, 12, 22, 14, '#fff', 'left', 'rgba(30,20,60,.8)');
+  if(mode !== 'record'){
+    ctx.fillStyle = 'rgba(0,0,0,.25)'; ctx.fillRect(W - 14, 70, 6, 420);
+    ctx.fillStyle = '#ffd45e'; const f = p.maxIdx / TOP; ctx.fillRect(W - 14, 70 + 420*(1-f), 6, 420*f);
+  }
+  if(G.state === 'clear'){
+    ctx.fillStyle = 'rgba(255,255,255,' + (0.25 + 0.15*Math.sin(time*10)) + ')'; ctx.fillRect(0, 0, W, H);
+    T('CLEAR!', W/2, 260, 44, '#fff5c4', 'center', '#3a3a7a');
+    T(CLEAR_SCORE + '점', W/2, 310, 24, '#fff', 'center', '#3a3a7a');
+  }
+  btn(12, 572, 160, 56, '방향전환 [Q]', actDir, {color:'#ffa8cc'});
+  btn(188, 572, 160, 56, '점프 [E]', actJump, {color:'#b6f26b'});
+}
+
+function drawDialog(){
+  const d = dlg, c = CHARS[sel]; ensureWrap();
+  drawSky(d.bg.seq, d.bg.t);
+  drawCloud(W/2, 412, 300);
+  drawChar(c, W/2, 412 + Math.sin(time*2)*2, 264, false);
+  if(d.opts.wing) drawWing(c, W/2, 150 + Math.sin(time*3)*6, 96);
+  const last = d.i === d.lines.length - 1, full = d.n >= d.total;
+  const showCh = d.opts.choices && last && full;
+  if(!showCh) zone(0, 0, W, H, advance);
+  // 이름표 + 대사창
+  ctx.fillStyle = '#ffd45e'; ctx.fillRect(20, 398, 120, 28);
+  T(c.name, 80, 412, 15, '#2b2140');
+  ctx.fillStyle = '#fff'; ctx.fillRect(9, 417, 342, 156);
+  ctx.fillStyle = 'rgba(28,27,58,.94)'; ctx.fillRect(12, 420, 336, 150);
+  let left = Math.floor(d.n);
+  d.wrapLines.forEach((ln, k) => {
+    const s = ln.slice(0, Math.max(0, left)); left -= ln.length;
+    if(s) T(s, 28, 448 + k*26, 17, '#fff', 'left');
+  });
+  if(full && !showCh) T('▼', W - 30, 552 + Math.sin(time*6)*3, 14, '#ffd45e');
+  if(showCh) d.opts.choices.forEach((ch, k) => btn(12 + k*176, 580, 160, 48, ch.label, ch.cb, {color:k ? COL_GREEN : COL_PINK, size:16}));
+}
+
+function drawChoice(){
+  drawSky('normal', 1);
+  const c = CHARS[sel];
+  T('NORMAL CLEAR!', W/2, 100, 34, '#fff5c4', 'center', '#3a3a7a');
+  T(CLEAR_SCORE + '점 도달', W/2, 145, 20, '#fff', 'center', '#3a3a7a');
+  drawCloud(W/2, 320, 200);
+  drawChar(c, W/2, 320, 120, false);
+  drawWing(c, W/2, 170 + Math.sin(time*3)*5, 72);
+  btn(32, 385, 296, 64, '하드모드 (진엔딩 루트)', () => startGame('hard'), {color:COL_GREEN, size:17});
+  btn(32, 470, 296, 64, '기록모드 (점수찍기)', () => startGame('record'), {color:COL_PINK, size:17});
+  btn(104, 565, 152, 44, '메인으로', toTitle, {color:'#e6e0f5', size:15});
+}
+
+function drawResult(){
+  drawSky('record', 0);
+  const c = CHARS[sel], r = G.result;
+  T('RECORD', W/2, 90, 36, '#fff', 'center', '#3a3a7a');
+  drawCloud(W/2, 300, 180); drawChar(c, W/2, 300, 110, false);
+  T('이번 기록', W/2, 345, 16, '#fff', 'center', '#3a3a7a');
+  T(r.score + '점', W/2, 385, 36, '#fff5c4', 'center', '#3a3a7a');
+  T('BEST ' + r.best + '점', W/2, 425, 18, '#fff', 'center', '#3a3a7a');
+  btn(12, 470, 160, 52, '메인으로 가기', toTitle, {color:COL_PINK, size:16});
+  btn(188, 470, 160, 52, '다시 시작하기', () => startGame('record'), {color:COL_GREEN, size:16});
+  zone(60, 570, 240, 36, openLink);
+  T(YOUTUBE_LABEL, W/2, 588, 14, '#fff', 'center', '#3a3a7a');
+}
+
+function drawCredits(){
+  drawSky('hard', 1);
+  ctx.fillStyle = 'rgba(0,0,0,.5)'; ctx.fillRect(0, 0, W, H);
+  CREDITS.forEach((ln, i) => {
+    const y = cr.y + i*34; if(y < -20 || y > H + 20) return;
+    if(ln.startsWith('*')) T(ln.slice(1), W/2, y, 20, '#ffd45e');
+    else T(ln, W/2, y, 16, '#fff');
+  });
+  const ly = cr.y + CREDITS.length*34;
+  zone(50, ly - 20, 260, 40, openLink);
+  T(YOUTUBE_LABEL, W/2, ly, 17, '#7fd1ff');
+  ctx.fillStyle = '#7fd1ff'; ctx.fillRect(W/2 - 110, ly + 13, 220, 2);
+  if(cr.done) btn(104, 540, 152, 48, '타이틀로', toTitle, {color:'#e6e0f5'});
+}
+
+function draw(){
+  hits = [];
+  ctx.setTransform(K, 0, 0, K, 0, 0); ctx.imageSmoothingEnabled = false;
+  switch(G.screen){
+    case 'title': drawTitle(); break;
+    case 'game': drawGame(); break;
+    case 'dialog': drawDialog(); break;
+    case 'choice': drawChoice(); break;
+    case 'result': drawResult(); break;
+    case 'credits': drawCredits(); break;
+  }
+  if(G.toast){
+    ctx.fillStyle = 'rgba(30,20,60,.85)'; ctx.fillRect(50, 250, 260, 44);
+    T(G.toast.text, W/2, 272, 16, '#fff');
+  }
+}
+
+let lastT = performance.now();
+function loop(now){
+  const dt = Math.min(0.033, (now - lastT) / 1000); lastT = now;
+  update(dt); draw(); requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>
