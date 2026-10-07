@@ -1,0 +1,573 @@
+<title>산하엽 가갸날 시험</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Nanum+Gothic+Coding:wght@400;700&family=Nanum+Myeongjo:wght@400;700;800&display=swap">
+<style>
+/* 레이아웃: 갱지 한 장을 위에서 아래로 읽는 단일 컬럼. 먹색 글씨, 붉은 펜은 경고와 채점에만 쓴다. 의도적으로 단일 테마(종이). */
+:root {
+  --paper: #eeece7;
+  --paper-deep: #dcdad4;
+  --lift: rgba(255, 255, 255, 0.32);
+  --ink: #161615;
+  --ink-soft: #4a4944;
+  --rule: #a9a79e;
+  --red: #b8232b;
+  --red-wash: rgba(184, 35, 43, 0.2);
+  --f-head: "Nanum Myeongjo", "Batang", "AppleMyungjo", serif;
+  --f-body: "Gowun Batang", "Batang", "AppleMyungjo", serif;
+  --f-util: "Nanum Gothic Coding", "D2Coding", ui-monospace, monospace;
+  --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .1 0 0 0 0 .1 0 0 0 0 .08 0 0 0 .35 -.1'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  color-scheme: light;
+}
+* { box-sizing: border-box; }
+body {
+  background-color: var(--paper);
+  background-image: var(--grain);
+  color: var(--ink);
+  font-family: var(--f-body);
+  font-size: 17px;
+  line-height: 1.65;
+  word-break: keep-all;
+  overflow-wrap: break-word;
+}
+.wrap { max-width: 640px; margin: 0 auto; padding-inline: 20px; padding-block: 28px 56px; }
+.screen[hidden] { display: none; }
+button, input { font-family: inherit; color: inherit; }
+
+/* 첫 화면 */
+.meta { display: flex; flex-wrap: wrap; gap: 4px 18px; font: 700 12px/1.4 var(--f-util); letter-spacing: 0.08em; color: var(--ink-soft); }
+.guild { margin: 22px 0 0; font: 700 clamp(16px, 4.4vw, 20px)/1.4 var(--f-head); }
+h1 { margin: 0; font: 800 clamp(54px, 18vw, 96px)/1.05 var(--f-head); letter-spacing: -0.03em; }
+.dbl { height: 7px; border-top: 4px solid var(--ink); border-bottom: 1px solid var(--ink); margin-top: 14px; }
+.notice { margin-top: 28px; }
+.notice h2 { margin: 0; font: 800 22px/1.3 var(--f-head); }
+.notice .lead { margin: 2px 0 16px; font-size: 15px; color: var(--ink-soft); }
+.notice ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 9px; }
+.notice li { position: relative; padding-left: 1.6em; }
+.notice li::before { content: "※"; position: absolute; left: 0; }
+.notice li.warn b { font-weight: 700; background: linear-gradient(transparent 58%, var(--red-wash) 58%); }
+.ident { display: grid; grid-template-columns: auto 1fr; border: 2px solid var(--ink); margin-top: 28px; }
+.ident label { display: flex; align-items: center; padding: 12px 16px; border-right: 2px solid var(--ink); background: var(--paper-deep); font: 700 14px/1 var(--f-util); letter-spacing: 0.1em; }
+.ident input { min-width: 0; border: 0; border-radius: 0; background: transparent; padding: 12px 14px; font: 800 20px/1.3 var(--f-head); outline: none; }
+.ident:focus-within { outline: 3px solid var(--ink); outline-offset: 3px; }
+.btn { appearance: none; display: block; width: 100%; min-height: 56px; margin-top: 14px; padding: 16px 20px; border: 2px solid var(--ink); border-radius: 0; background: var(--ink); color: var(--paper); font: 800 20px/1 var(--f-head); letter-spacing: 0.16em; text-indent: 0.16em; cursor: pointer; }
+.btn:disabled { background: transparent; color: var(--rule); border-color: var(--rule); border-style: dashed; cursor: not-allowed; }
+.btn:not(:disabled):active { transform: translateY(1px); }
+.btn:focus-visible { outline: 3px solid var(--ink); outline-offset: 3px; }
+.sub { margin: 10px 0 0; font-size: 14px; color: var(--ink-soft); }
+
+/* 문제 화면 */
+#exam { user-select: none; -webkit-user-select: none; }
+#exam input { user-select: text; -webkit-user-select: text; }
+.qhead { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; font: 700 13px/1.3 var(--f-util); letter-spacing: 0.06em; }
+.qhead .who { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.qhead .cnt { white-space: nowrap; font-variant-numeric: tabular-nums; }
+.ticks { display: grid; grid-template-columns: repeat(25, 1fr); gap: 2px; align-items: end; height: 14px; margin-top: 10px; }
+.ticks i { display: block; height: 6px; background: var(--rule); }
+.ticks i.done { background: var(--ink); }
+.ticks i.now { height: 14px; background: var(--ink); }
+.timer { display: flex; justify-content: space-between; align-items: baseline; margin-top: 18px; font-family: var(--f-util); }
+.timer .lab { font-size: 12px; font-weight: 700; letter-spacing: 0.1em; color: var(--ink-soft); }
+.timer .sec { font-size: 36px; font-weight: 700; line-height: 1; font-variant-numeric: tabular-nums; }
+.timer .sec small { font-size: 14px; margin-left: 2px; }
+.bar { height: 6px; margin-top: 6px; background: var(--rule); }
+.bar i { display: block; height: 100%; background: var(--ink); transform-origin: left; }
+.low .sec { color: var(--red); }
+.low + .bar i { background: var(--red); }
+.qbox { position: relative; padding-bottom: 8px; animation: in 0.18s ease-out; }
+@keyframes in { from { opacity: 0.2; } to { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .qbox { animation: none; } }
+.eyebrow { margin: 26px 0 0; font: 700 12px/1.4 var(--f-util); letter-spacing: 0.1em; color: var(--ink-soft); }
+.qt { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 0 10px; align-items: baseline; margin-top: 6px; }
+.qt .no { font: 800 34px/1.1 var(--f-head); font-variant-numeric: tabular-nums; }
+.qt .tx { margin: 0; font: 700 19px/1.55 var(--f-head); }
+.qline { margin: 14px 0 0; font: 700 19px/1.55 var(--f-head); }
+.passage { min-width: 0; margin-top: 14px; padding: 14px 16px; border: 1.5px solid var(--ink); background: var(--lift); line-height: 1.8; }
+.qt .passage { margin-top: 0; }
+.passage .ln { margin: 0; }
+.passage .ln + .ln { margin-top: 10px; }
+.sp { font-weight: 700; margin-right: 0.45em; }
+.sp::after { content: " :"; }
+.gap { display: inline-block; width: 3.4em; height: 1em; margin: 0 0.1em; border-bottom: 2px solid var(--ink); vertical-align: -0.12em; }
+.opts { display: grid; gap: 8px; margin: 18px 0 0; padding: 0; list-style: none; }
+.opt { position: relative; display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 12px; align-items: start; min-height: 52px; padding: 11px 14px; border: 1px solid var(--rule); cursor: pointer; }
+.opt input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: pointer; }
+.opt .mk { display: grid; place-items: center; width: 30px; height: 30px; border: 1.5px solid var(--ink); border-radius: 50%; font: 700 15px/1 var(--f-body); }
+.opt .tx { padding-top: 2px; }
+.opt:hover { background: var(--lift); }
+.opt.sel { border-color: var(--ink); background: var(--paper-deep); }
+.opt.sel .mk { background: var(--ink); color: var(--paper); }
+.opt.kb { outline: 3px solid var(--ink); outline-offset: 2px; }
+.gapin { width: 5.6em; padding: 2px 4px; border: 0; border-bottom: 2px solid var(--ink); border-radius: 0; background: transparent; font: 700 18px/1.4 var(--f-body); text-align: center; outline: none; }
+.gapin:focus { background: var(--lift); border-bottom-width: 3px; }
+.fixes { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 16px; }
+.fixes label { display: grid; gap: 4px; font: 700 12px/1.3 var(--f-util); letter-spacing: 0.08em; color: var(--ink-soft); }
+.fixes.one { grid-template-columns: 1fr; }
+.fixes .gapin { width: 100%; text-align: left; padding: 6px 4px; }
+.stamp { position: absolute; left: 50%; top: 38%; transform: translate(-50%, -50%) rotate(-8deg); padding: 6px 20px; border: 4px solid var(--red); background: var(--paper); color: var(--red); font: 800 40px/1.3 var(--f-head); letter-spacing: 0.1em; white-space: nowrap; }
+
+/* 최종 화면 */
+.result img { display: block; width: 100%; height: auto; border: 1px solid var(--rule); }
+.hint { margin: 16px 0 0; text-align: center; font: 700 14px/1.5 var(--f-util); letter-spacing: 0.04em; color: var(--ink-soft); }
+.fallback { padding: 20px; border: 2px solid var(--ink); }
+.fallback p { margin: 4px 0; }
+</style>
+
+<main class="wrap" lang="ko">
+
+  <section id="intro" class="screen">
+    <div class="meta"><span>25문항</span><span>100점 만점</span><span>약 10분</span></div>
+    <p class="guild">도쿄디벙커 K-7ch 길드 ‘산하엽’</p>
+    <h1>가갸날 시험</h1>
+    <div class="dbl"></div>
+
+    <div class="notice">
+      <h2>주의사항</h2>
+      <p class="lead">주의사항을 꼭 다 읽고 진행해 주세요</p>
+      <ul>
+        <li>총 25항목의 문제로 약 10분 내외 소요됩니다</li>
+        <li>문제 당 20~50초가 배정되어 있습니다</li>
+        <li>시간제한을 넘어서면 오답처리 됩니다</li>
+        <li>항목당 4점 배점</li>
+        <li class="warn">페이지를 벗어나면(창 최소화, 다른탭 이동, 다른 앱 열기 등) <b>전 문제 오답처리</b> 됩니다</li>
+        <li>아는 만큼 풀어주세요! 이번 시험의 보상은 소소합니다</li>
+      </ul>
+    </div>
+
+    <div class="ident">
+      <label for="nick">닉네임</label>
+      <input id="nick" type="text" maxlength="12" autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="go" placeholder="여기에 입력">
+    </div>
+    <button id="start" class="btn" type="button" disabled>시험 시작</button>
+    <p class="sub">버튼을 누르면 바로 1번 문제가 시작됩니다.</p>
+  </section>
+
+  <section id="exam" class="screen" hidden>
+    <div class="qhead"><span class="who" id="who"></span><span class="cnt" id="cnt"></span></div>
+    <div class="ticks" id="ticks" aria-hidden="true"></div>
+    <div class="timer" id="timer"><span class="lab">남은 시간</span><span class="sec"><span id="sec">30</span><small>초</small></span></div>
+    <div class="bar" aria-hidden="true"><i id="barfill"></i></div>
+    <div id="qbody"></div>
+  </section>
+
+  <section id="result" class="screen result" hidden>
+    <img id="rimg" alt="" hidden>
+    <div id="rfall" class="fallback" hidden></div>
+    <p class="hint" id="rhint">결과지를 만드는 중입니다…</p>
+  </section>
+
+</main>
+
+<script>
+(function () {
+  'use strict';
+
+  var TOTAL = 25, PTS = 4;
+  var ANS = "WzIsIDMsIDMsIDEsIDEsIDMsIDQsIDIsIDMsIDQsIDIsIDEsIDQsIDIsIDMsIDEsIDQsIDIsIDEsIDQsIDEsIDIsIFsi6riI7IS4IiwgIuupsOy5oCJdLCAi7J6YIiwgWyLrj7wiLCAi65CYIl1d";
+  var SECS = ['맞춤법 · 다크윅의 일상', '순우리말 · 젠지 & 유리 TIME', '주관식'];
+
+  /* s: 구역, t: 제한 시간(초), k: mc 객관식 / fill 인라인 빈칸 / two 정정 두 칸, {{ }}: 밑줄, __: 빈칸 */
+  var Q = [
+    { s: 0, t: 30, k: 'mc', q: '보고서를 쓰던 미도가 물었다. "이거 맞는 맞춤법이 뭐지?"', o: ["레오: '몇 일'?", "쇼헤이: 아아, 대장. '며칠'이 맞지 않나?", "레오: 아닌가, '몇일'로 붙여써야 맞나?", "특기생: 저... 미도씨, '머칠'이라고 써 두셨는데요..."] },
+    { s: 0, t: 25, k: 'mc', q: '맞춤법에 맞게 빈칸을 채우시오.', p: '카이토 : 제에엔장! 로미오가 떴다고?! 큰일 났다!!!! 이제 나 (__)?', o: ['어떻해', '어떻게', '어떡해', '어떠케'] },
+    { s: 0, t: 20, k: 'mc', q: '빈칸에 알맞은 것은?', p: '스바루 : 아아, 웬일로 비가 (__) 그쳤네...', o: ['금시', '금새', '금세', '긍세'] },
+    { s: 0, t: 25, k: 'mc', q: '맞춤법에 맞게 올바르게 말한 구울은?', o: ['토와(밤): 그렇게 하면 안 돼요.', '토와(낮): ~♪', '하루: 그렇게 하면 안 됬던기라~!!!', '렌: 그렇게 하면 안 되세여.'] },
+    { s: 0, t: 35, k: 'mc', q: '옳은 용례로 말한 구울은?', o: ['유리: 지로의 병증이 {{나으면}} 이몸의 몰트 크랑켄이 최강이 되겠지!', '시온: 특기생이 내 아이를 {{낫으면}} 우리 가족인기제?', '미오: 시온, 네 녀석이 또 디오네시아에 재앙을 {{나았어.}}', '라이카: 특기생, 걱정하던 건 {{낳았어?}}'] },
+    { s: 0, t: 30, k: 'mc', q: '다음 중 올바르게 말한 구울은?', o: ['진: (왠) 걸 그렇게 많이 샀지?', '카이토: (왠) 떡이냐!', '루카스: 오늘, (왠)지 기분이 좋은걸?', '토우마: (왠)만한 일은 참을 수 있습니다.'] },
+    { s: 0, t: 20, k: 'mc', q: '띄어쓰기가 올바른 것은?', o: ['죠: 할수있다...', '죠안나: 할수 있다❣️', '시온: 할 수있다!🪄', '엘리어스: 어휴, 할 수 있다😌'] },
+    { s: 0, t: 25, k: 'mc', q: '다음은 라이카의 일기장에서 발췌한 문장들이다. 올바른 것은?', o: ['숙제를 않 했다. 🐺', '아직 밥을 안 먹었다. 🐺', '비가 오지 안는다. 🐺', '그건 좋지 안다. 🐺'] },
+    { s: 0, t: 35, k: 'mc', q: '단어를 제대로 사용한 인물은?', o: ['엘리어스: 아....드디어, 비(로서)', '하이드: 오늘만큼은 선생님으(로써) 대하는 거야. 음음.', '루카스: 특기생, 나는 네 친구(로서) 말하는 거야.', '이사장: 여러분은 다크윅 아카데미의 검으(로써) 괴이를 베게 될 것입니다!'] },
+    { s: 0, t: 35, k: 'mc', q: '올바르게 말한 구울은?', o: ['미오: 아아, 흐트러진 톱니바퀴를 (맞히고) 있었어.', '지로: 시간을 (맞혀서) 진료 일정을 잡아보죠.', '로미오: 구두를 (맞힐) 때가 됐어. 패션의 완성이니까.', '신조: 제 차례로군요. 정답을 (맞혀) 보겠습니다!'] },
+    { s: 0, t: 30, k: 'mc', q: '올바르게 황당해진 구울은?', o: ['타이가: (어의없잖아!) ㅋㅋㅋㅋㅋㅋ', '로미오: (어이가 없는) 거겠지.', '미도: (어히가, 없다)고?', '레오: 저 멍청이들 사실 (어휘가 없는) 거 아냐?'] },
+    { s: 0, t: 30, k: 'mc', q: '단어를 올바르게 쓴 구울은?', o: ['죠: 특기생 덕분에 (오랜만에) 편지를 써보네~🌸', '젠지: (오랫만에) 싯구를 적어보았다네 G.I.R.L~🌟', '라이카: 꿈에 (오랬만에) 그녀석이 나왔어🐺', '지로: 아주 (오랜만애) 음식을 경구섭취했습니다...👓'] },
+
+    { s: 1, t: 25, k: 'mc', pre: true, p: "젠지: 저 '가람' 우 반짝이는 비늘 벗겨다....", q: "싯구에 등장하는 '가람'의 뜻은?", o: ['하늘', '산', '바다', '강'] },
+    { s: 1, t: 20, k: 'mc', p: "유리: 한국의 전통 괴이 '미르'는 우리가 흔히 아는 말로 무엇을 이름입니까?", o: ['호랑이', '용', '거북', '봉황'] },
+    { s: 1, t: 20, k: 'mc', p: "젠지: 자네, '사랑'을 뜻하는 한국 토속 단어를 알고 있나?", o: ['가온', '다온', '다솜', '마루'] },
+    { s: 1, t: 25, k: 'mc', p: "유리: 이 한국형 괴이는 맑은 날 잠깐 내리는 '이 비'에만 나오는 특성을 지녔습니다. 순한국말이라는 비의 이름은?", o: ['여우비', '떡비', '먼지잼', '술비'] },
+    { s: 1, t: 20, k: 'mc', p: "젠지: 시나브로... 시구가 생각나는구만. 아, 자네 시나브로의 뜻을 아는가?", o: ['갑자기', '곧바로', '마침내', '모르는 사이에 조금씩'] },
+    { s: 1, t: 20, k: 'mc', p: "유리: 이 괴이는 '해거름'즈음에만 나온다고 하는데... 해거름이 언제쯤이지?", o: ['해 뜨기 직전', '해가 지는 무렵', '한낮', '한밤중'] },
+    { s: 1, t: 25, k: 'mc', p: "젠지: '아름드리'로 그대의 마음에 쉼을 드리우고... 어떤가. 이 시구. 아, '아름드리'가 무엇이냐고?", o: ['두 팔을 둥글게 둘러 만든 크기만큼', '아름다운 노래', '가을 수확', '둥근 달'] },
+    { s: 1, t: 20, k: 'mc', p: "유리: 해당 괴이는 '미리내'가 보이는 곳에서만 나타난다...라. 미리내가 뭔지는 아시겠지요?", o: ['무지개', '북극성', '보름달', '은하수'] },
+    { s: 1, t: 30, k: 'mc', p: "젠지: 그 아이와 나의 시간도 '도담도담' 쌓여가겠지....응? 무엇을 하고 있냐고? 좋은 질문일세! 그보다 그대, '도담도담'의 뜻은 아는가?", o: ['어린아이가 탈 없이 잘 자라는 모양', '정답게 이야기하는 모양', '천천히 걷는 모양', '조용히 흐르는 모양'] },
+    { s: 1, t: 20, k: 'mc', p: "유리: 여기 공유 보고서 보이나? '나래'의 뜻 정도는 알겠지?", o: ['나루터', '날개', '노래', '나이'] },
+
+    { s: 2, t: 45, k: 'two', q: '다음 문장에서 틀린 부분 두 곳을 찾아 바르게 고쳐 써 보시오.', p: '이번 괴이 토벌 작전, 금새 끝날 줄 알았는데 몇일이나 걸렸어.', fix: ['바르게 고친 말 ①', '바르게 고친 말 ②'] },
+    { s: 2, t: 30, k: 'fill', q: '순우리말로 100은 온, 1,000은 즈믄, 10,000은 골입니다. 그렇다면 1억은 무엇일까요?', p: '길드장: □하자.', fix: ['정답'] },
+    { s: 2, t: 40, k: 'fill', q: '알맞게 문장의 빈칸을 채워주세요.(돼/되)', lines: ['(1) 카이토: ...이제 가도 (__)?', '(2) 로미오: 하하하. 그건 안 (__)지.'] }
+  ];
+
+  var A;
+  try { A = JSON.parse(decodeURIComponent(escape(atob(ANS)))); } catch (e) { A = []; }
+
+  var $ = function (id) { return document.getElementById(id); };
+  var state = 'intro', idx = 0, res = [], nick = '', locked = false;
+  var timerId = 0, endAt = 0, totalMs = 0, cur = null;
+
+  function el(tag, cls) { var e = document.createElement(tag); if (cls) e.className = cls; return e; }
+  function esc(s) { return s.replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+  function rich(s, speaker) {
+    var h = esc(s), sp = '';
+    if (speaker) {
+      var m = h.match(/^([^:：\n]{1,14}?)\s*:\s*/);
+      if (m) { sp = '<b class="sp">' + m[1] + '</b>'; h = h.slice(m[0].length); }
+    }
+    h = h.replace(/\{\{(.+?)\}\}/g, '<u>$1</u>').replace(/__/g, '<span class="gap"></span>');
+    return sp + h;
+  }
+  function norm(s) { return String(s).normalize('NFC').replace(/\s+/g, ''); }
+
+  /* ---------- 채점 ---------- */
+  function grade(i, v) {
+    var d = Q[i], a = A[i];
+    if (d.k === 'mc') return v === a;
+    if (d.k === 'two') {
+      var got = v.map(norm).sort(), want = a.map(norm).sort();
+      return got.length === 2 && got[0] === want[0] && got[1] === want[1];
+    }
+    if (Array.isArray(a)) return v.length === a.length && v.every(function (x, j) { return norm(x) === norm(a[j]); });
+    return norm(v[0] || '') === norm(a);
+  }
+
+  /* ---------- 문제 그리기 ---------- */
+  function inlineLine(text) {
+    var p = el('p', 'ln');
+    var m = text.match(/^(\(\d\)\s*)?([^:：]{1,14}?)\s*:\s*/);
+    if (m) {
+      if (m[1]) p.appendChild(document.createTextNode(m[1]));
+      var b = el('b', 'sp'); b.textContent = m[2]; p.appendChild(b); text = text.slice(m[0].length);
+    }
+    var parts = text.split('__');
+    parts.forEach(function (part, n) {
+      p.appendChild(document.createTextNode(part));
+      if (n < parts.length - 1) p.appendChild(makeInput('빈칸'));
+    });
+    return p;
+  }
+  function makeInput(label) {
+    var i = el('input', 'gapin');
+    i.type = 'text';
+    i.setAttribute('aria-label', label);
+    i.setAttribute('autocomplete', 'off');
+    i.setAttribute('autocapitalize', 'off');
+    i.setAttribute('autocorrect', 'off');
+    i.setAttribute('spellcheck', 'false');
+    i.setAttribute('enterkeyhint', 'done');
+    return i;
+  }
+  function passageEl(d) {
+    var box = el('div', 'passage');
+    if (d.lines) {
+      d.lines.forEach(function (l) { box.appendChild(inlineLine(l)); });
+    } else {
+      var p = el('p', 'ln'); p.innerHTML = rich(d.p, true); box.appendChild(p);
+    }
+    return box;
+  }
+
+  function build(i) {
+    var d = Q[i], box = el('div', 'qbox');
+    var eb = el('p', 'eyebrow'); eb.textContent = SECS[d.s]; box.appendChild(eb);
+
+    var row = el('div', 'qt');
+    var no = el('span', 'no'); no.textContent = (i + 1) + '.'; row.appendChild(no);
+    if (!d.q || d.pre) {
+      row.appendChild(passageEl(d));
+      box.appendChild(row);
+      if (d.q) { var ql = el('p', 'qline'); ql.textContent = d.q; box.appendChild(ql); }
+    } else {
+      var tx = el('p', 'tx'); tx.textContent = d.q; row.appendChild(tx);
+      box.appendChild(row);
+      if (d.p || d.lines) box.appendChild(passageEl(d));
+    }
+
+    var get;
+    var submit = el('button', 'btn'); submit.type = 'button'; submit.textContent = '제출'; submit.disabled = true;
+
+    if (d.k === 'mc') {
+      var ol = el('ol', 'opts'), sel = 0, labels = [];
+      d.o.forEach(function (t, n) {
+        var li = el('li'), lb = el('label', 'opt');
+        var r = el('input'); r.type = 'radio'; r.name = 'opt'; r.value = n + 1;
+        var mk = el('span', 'mk'); mk.textContent = n + 1;
+        var tt = el('span', 'tx'); tt.innerHTML = rich(t, true);
+        lb.append(r, mk, tt); li.appendChild(lb); ol.appendChild(li); labels.push(lb);
+        r.addEventListener('change', function () { pick(n + 1); });
+      });
+      var pick = function (n) {
+        sel = n;
+        labels.forEach(function (l, j) { l.classList.toggle('sel', j === n - 1); l.querySelector('input').checked = (j === n - 1); });
+        submit.disabled = false;
+      };
+      box.appendChild(ol);
+      get = function () { return sel; };
+      cur = { pick: pick, submit: submit, mc: true };
+    } else {
+      var inputs;
+      if (d.fix) {
+        var fx = el('div', d.fix.length === 1 ? 'fixes one' : 'fixes');
+        d.fix.forEach(function (t) {
+          var lb = el('label'), sp = el('span'); sp.textContent = t;
+          lb.append(sp, makeInput(t)); fx.appendChild(lb);
+        });
+        box.appendChild(fx);
+      }
+      inputs = box.querySelectorAll('input.gapin');
+      var check = function () {
+        var any = false;
+        for (var n = 0; n < inputs.length; n++) if (inputs[n].value.trim()) any = true;
+        submit.disabled = !any;
+      };
+      Array.prototype.forEach.call(inputs, function (inp) { inp.addEventListener('input', check); });
+      get = function () { return Array.prototype.map.call(inputs, function (x) { return x.value; }); };
+      cur = { submit: submit, mc: false };
+    }
+    cur.get = get;
+    submit.addEventListener('click', function () { send(false); });
+    box.appendChild(submit);
+    return box;
+  }
+
+  function show(i) {
+    idx = i; locked = false;
+    var d = Q[i];
+    $('qbody').replaceChildren(build(i));
+    $('cnt').textContent = String(i + 1).padStart(2, '0') + ' / ' + TOTAL;
+    Array.prototype.forEach.call($('ticks').children, function (t, n) {
+      t.className = n < i ? 'done' : (n === i ? 'now' : '');
+    });
+    if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
+    window.scrollTo(0, 0);
+    startTimer(d.t);
+  }
+
+  /* ---------- 타이머 ---------- */
+  function startTimer(sec) {
+    stopTimer();
+    totalMs = sec * 1000; endAt = performance.now() + totalMs;
+    tick();
+    timerId = setInterval(tick, 100);
+  }
+  function stopTimer() { if (timerId) { clearInterval(timerId); timerId = 0; } }
+  function tick() {
+    var left = Math.max(0, endAt - performance.now());
+    $('sec').textContent = Math.ceil(left / 1000);
+    $('barfill').style.transform = 'scaleX(' + (left / totalMs) + ')';
+    $('timer').classList.toggle('low', left <= 5000);
+    if (left <= 0) send(true);
+  }
+
+  function send(timeout) {
+    if (locked || state !== 'exam') return;
+    locked = true; stopTimer();
+    if (timeout) {
+      res[idx] = false;
+      var box = $('qbody').firstChild;
+      var st = el('div', 'stamp'); st.textContent = '시간 초과'; box.appendChild(st);
+      Array.prototype.forEach.call(box.querySelectorAll('input,button'), function (x) { x.disabled = true; });
+      setTimeout(next, 700);
+    } else {
+      res[idx] = grade(idx, cur.get());
+      next();
+    }
+  }
+  function next() {
+    if (state !== 'exam') return;
+    if (idx + 1 >= TOTAL) finish(false); else show(idx + 1);
+  }
+
+  /* ---------- 이탈 감지 ---------- */
+  function violate() { if (state === 'exam') finish(true); }
+  document.addEventListener('visibilitychange', function () { if (document.hidden) violate(); });
+  window.addEventListener('blur', violate);
+  window.addEventListener('pagehide', violate);
+
+  ['copy', 'cut', 'dragstart', 'selectstart'].forEach(function (ev) {
+    document.addEventListener(ev, function (e) {
+      if (state === 'exam' && !(e.target && e.target.tagName === 'INPUT')) e.preventDefault();
+    });
+  });
+  document.addEventListener('contextmenu', function (e) { if (state === 'exam') e.preventDefault(); });
+
+  document.addEventListener('keydown', function (e) {
+    if (state !== 'exam' || locked || !cur) return;
+    var t = e.target, typing = t && t.tagName === 'INPUT' && t.type === 'text';
+    if (!typing && cur.mc && /^[1-4]$/.test(e.key)) { cur.pick(+e.key); return; }
+    if (e.key === 'Enter' && !cur.submit.disabled && !(t && t.tagName === 'BUTTON')) { e.preventDefault(); send(false); }
+  });
+
+  /* ---------- 시작 ---------- */
+  var nickEl = $('nick'), startBtn = $('start');
+  nickEl.addEventListener('input', function () { startBtn.disabled = !nickEl.value.trim(); });
+  nickEl.addEventListener('keydown', function (e) { if (e.key === 'Enter' && !startBtn.disabled) begin(); });
+  startBtn.addEventListener('click', begin);
+
+  function begin() {
+    nick = nickEl.value.trim();
+    if (!nick) return;
+    var tk = $('ticks'); tk.replaceChildren();
+    for (var n = 0; n < TOTAL; n++) tk.appendChild(el('i'));
+    $('who').textContent = nick;
+    $('intro').hidden = true; $('exam').hidden = false;
+    state = 'exam'; res = [];
+    show(0);
+  }
+
+  /* ---------- 결과 ---------- */
+  function finish(violated) {
+    stopTimer();
+    state = 'result';
+    var wrong = [];
+    for (var n = 0; n < TOTAL; n++) if (violated || !res[n]) wrong.push(n + 1);
+    var score = (TOTAL - wrong.length) * PTS;
+    $('exam').hidden = true; $('result').hidden = false;
+    window.scrollTo(0, 0);
+    var info = { nick: nick, score: score, wrong: wrong, violated: violated, when: stampStr() };
+    renderImage(info).then(function (url) {
+      var img = $('rimg');
+      img.alt = info.nick + ' 가갸날 시험 결과. 점수 ' + score + '점. ' + (wrong.length ? '오답 문항 ' + wrong.join(', ') + '번.' : '오답 없음.');
+      img.src = url; img.hidden = false;
+      $('rhint').textContent = '화면을 꾹 누르면 이미지가 저장됩니다';
+    }).catch(function () {
+      var f = $('rfall'); f.hidden = false;
+      f.replaceChildren();
+      [info.nick, score + '점 / ' + (TOTAL * PTS) + '점', '오답 문항: ' + (wrong.length ? wrong.join(', ') : '없음'), info.when].forEach(function (t) { var p = el('p'); p.textContent = t; f.appendChild(p); });
+      $('rhint').textContent = '이 화면을 캡처해서 제출해 주세요';
+    });
+  }
+
+  function stampStr() {
+    var d = new Date(), z = function (n) { return String(n).padStart(2, '0'); };
+    return d.getFullYear() + '.' + z(d.getMonth() + 1) + '.' + z(d.getDate()) + ' ' + z(d.getHours()) + ':' + z(d.getMinutes());
+  }
+
+  var F = {
+    head: '"Nanum Myeongjo","Batang","AppleMyungjo",serif',
+    body: '"Gowun Batang","Batang","AppleMyungjo",serif',
+    util: '"Nanum Gothic Coding","D2Coding",monospace'
+  };
+  var TRUST = '위반행위를 하지 않았으리라, 길드장은 여러분을 믿습니다';
+  var VIOL = '화면 이탈이 감지되어 전 문항이 오답 처리되었습니다';
+
+  function noiseCanvas() {
+    var c = document.createElement('canvas'); c.width = c.height = 256;
+    var g = c.getContext('2d'), im = g.createImageData(256, 256), d = im.data;
+    for (var n = 0; n < d.length; n += 4) { d[n] = 30; d[n + 1] = 30; d[n + 2] = 25; d[n + 3] = Math.random() * 30; }
+    g.putImageData(im, 0, 0);
+    return c;
+  }
+  function wrapLines(g, s, maxW) {
+    var words = s.split(' '), lines = [], line = '';
+    words.forEach(function (w) {
+      var t = line ? line + ' ' + w : w;
+      if (g.measureText(t).width > maxW && line) { lines.push(line); line = w; } else line = t;
+    });
+    if (line) lines.push(line);
+    return lines;
+  }
+
+  function paint(g, W, H, draw, info) {
+    var M = 64, IW = W - 2 * M;
+    var INK = '#161615', SOFT = '#4a4944', RULE = '#a9a79e', RED = '#b8232b', DEEP = '#dcdad4';
+    var wrong = info.wrong;
+    function set(font, color, align) { g.font = font; g.fillStyle = color; g.textAlign = align || 'left'; g.textBaseline = 'alphabetic'; }
+    function txt(s, x, y) { if (draw) g.fillText(s, x, y); }
+
+    if (draw) {
+      g.fillStyle = '#eeece7'; g.fillRect(0, 0, W, H);
+      g.fillStyle = g.createPattern(noiseCanvas(), 'repeat'); g.fillRect(0, 0, W, H);
+    }
+    var y = M;
+    set('700 24px ' + F.util, SOFT); txt(TOTAL + '문항 · ' + (TOTAL * PTS) + '점 만점', M, y + 20);
+    set('700 24px ' + F.util, SOFT, 'right'); txt(info.when, W - M, y + 20);
+    y += 66;
+    set('700 34px ' + F.head, INK); txt('도쿄디벙커 K-7ch 길드 ‘산하엽’', M, y);
+    y += 118;
+    set('800 128px ' + F.head, INK); txt('가갸날 시험', M - 6, y);
+    y += 36;
+    if (draw) { g.fillStyle = INK; g.fillRect(M, y, IW, 8); g.fillRect(M, y + 16, IW, 2); }
+    y += 66;
+
+    var rh = 100;
+    if (draw) {
+      g.fillStyle = DEEP; g.fillRect(M, y, 200, rh);
+      g.strokeStyle = INK; g.lineWidth = 4; g.strokeRect(M + 2, y + 2, IW - 4, rh - 4);
+      g.beginPath(); g.moveTo(M + 200, y); g.lineTo(M + 200, y + rh); g.stroke();
+    }
+    set('700 28px ' + F.util, INK, 'center'); txt('닉네임', M + 100, y + rh / 2 + 10);
+    var fs = 48; set('800 ' + fs + 'px ' + F.head, INK);
+    while (g.measureText(info.nick).width > IW - 248 && fs > 24) { fs -= 2; set('800 ' + fs + 'px ' + F.head, INK); }
+    txt(info.nick, M + 224, y + rh / 2 + fs * 0.34);
+    y += rh + 64;
+
+    set('700 26px ' + F.util, SOFT); txt('점수', M, y);
+    y += 230;
+    var num = String(info.score);
+    set('800 210px ' + F.head, RED); var nw = g.measureText(num).width;
+    set('800 80px ' + F.head, RED); var uw = g.measureText('점').width;
+    var x0 = M + 70, tw = nw + uw + 12;
+    set('800 210px ' + F.head, RED); txt(num, x0, y);
+    set('800 80px ' + F.head, RED); txt('점', x0 + nw + 12, y);
+    if (draw) {
+      var cx = x0 + tw / 2, cy = y - 80, rx = tw / 2 + 54, ry = 130;
+      g.strokeStyle = RED; g.lineCap = 'round';
+      g.lineWidth = 8; g.beginPath(); g.ellipse(cx, cy, rx, ry, -0.06, 0.2, Math.PI * 2 + 0.4); g.stroke();
+      g.lineWidth = 4; g.beginPath(); g.ellipse(cx + 3, cy - 2, rx + 9, ry - 6, 0.05, -0.1, Math.PI * 2 + 0.1); g.stroke();
+    }
+    set('700 34px ' + F.body, SOFT, 'right'); txt('/ ' + (TOTAL * PTS) + '점 만점', W - M, y);
+    y += 100;
+
+    set('700 26px ' + F.util, SOFT); txt('오답 문항', M, y);
+    set('700 26px ' + F.util, RED, 'right'); txt(wrong.length + '개', W - M, y);
+    y += 28;
+    if (!wrong.length) {
+      set('800 46px ' + F.head, RED); txt('오답 없음 · 만점', M, y + 62);
+      y += 104;
+    } else {
+      var bs = 76, gp = 12, cols = Math.floor((IW + gp) / (bs + gp));
+      wrong.forEach(function (n, i) {
+        var bx = M + (i % cols) * (bs + gp), by = y + Math.floor(i / cols) * (bs + gp);
+        if (draw) { g.strokeStyle = RED; g.lineWidth = 3; g.strokeRect(bx + 1.5, by + 1.5, bs - 3, bs - 3); }
+        set('700 34px ' + F.body, RED, 'center'); txt(String(n), bx + bs / 2, by + bs / 2 + 12);
+      });
+      y += Math.ceil(wrong.length / cols) * (bs + gp) + 6;
+    }
+
+    if (info.violated) {
+      y += 28;
+      set('700 28px ' + F.body, RED);
+      var vl = wrapLines(g, VIOL, IW - 48), vh = vl.length * 42 + 36;
+      if (draw) { g.strokeStyle = RED; g.lineWidth = 3; g.strokeRect(M + 1.5, y + 1.5, IW - 3, vh - 3); }
+      set('700 28px ' + F.body, RED);
+      vl.forEach(function (l, i) { txt(l, M + 24, y + 46 + i * 42); });
+      y += vh;
+    }
+
+    y += 52;
+    if (draw) { g.fillStyle = RULE; g.fillRect(M, y, IW, 3); }
+    y += 62;
+    set('700 32px ' + F.head, INK);
+    wrapLines(g, TRUST, IW).forEach(function (l) { txt(l, M, y); y += 50; });
+    return y + M - 20;
+  }
+
+  function renderImage(info) {
+    var all = '가갸날시험0123456789도쿄디벙커길드산하엽닉네임점수오답문항개만점화면이탈이감지되어전오처리었습니다위반행위를하지않았으리라장은여러분을믿' + info.nick + info.when + TOTAL + PTS;
+    var loads = Promise.race([
+      Promise.all([
+        document.fonts.load('800 40px "Nanum Myeongjo"', all),
+        document.fonts.load('700 30px "Gowun Batang"', all),
+        document.fonts.load('700 30px "Nanum Gothic Coding"', all)
+      ]),
+      new Promise(function (r) { setTimeout(r, 2500); })
+    ]).catch(function () {});
+    return loads.then(function () {
+      var W = 1000;
+      var h = paint(document.createElement('canvas').getContext('2d'), W, 0, false, info);
+      var c = document.createElement('canvas'); c.width = W; c.height = Math.ceil(h);
+      paint(c.getContext('2d'), W, c.height, true, info);
+      return c.toDataURL('image/png');
+    });
+  }
+})();
+</script>
