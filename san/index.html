@@ -164,6 +164,8 @@ h1 { margin: 0; font: 800 clamp(54px, 18vw, 96px)/1.05 var(--f-head); letter-spa
 
   var TOTAL = 25, PTS = 4;
   var ANS = "WzIsIDMsIDMsIDEsIDEsIDMsIDQsIDIsIDMsIDQsIDIsIDEsIDQsIDIsIDMsIDEsIDQsIDIsIDEsIDQsIDEsIDIsIFsi6riI7IS4IiwgIuupsOy5oCJdLCAi7J6YIiwgWyLrj7wiLCAi65CYIl1d";
+  var GUILD = "산하엽";
+  var ENDPOINT = "https://script.google.com/macros/s/AKfycbxr_oJBOPtsiLm9vV5LL-6FZ6v17cObVCKQE62m7qhveUWkJSmCbYLgGks-sLArIXQi/exec";
   var SECS = ['맞춤법 · 다크윅의 일상', '순우리말 · 젠지 & 유리 TIME', '주관식'];
 
   /* s: 구역, t: 제한 시간(초), k: mc 객관식 / fill 인라인 빈칸 / two 정정 두 칸, {{ }}: 밑줄, __: 빈칸 */
@@ -201,7 +203,7 @@ h1 { margin: 0; font: 800 clamp(54px, 18vw, 96px)/1.05 var(--f-head); letter-spa
   try { A = JSON.parse(decodeURIComponent(escape(atob(ANS)))); } catch (e) { A = []; }
 
   var $ = function (id) { return document.getElementById(id); };
-  var state = 'intro', idx = 0, res = [], nick = '', locked = false;
+  var state = 'intro', idx = 0, res = [], nick = '', locked = false, subj = {};
   var timerId = 0, endAt = 0, totalMs = 0, cur = null;
 
   function el(tag, cls) { var e = document.createElement(tag); if (cls) e.className = cls; return e; }
@@ -360,6 +362,7 @@ h1 { margin: 0; font: 800 clamp(54px, 18vw, 96px)/1.05 var(--f-head); letter-spa
   function send(timeout) {
     if (locked || state !== 'exam') return;
     locked = true; stopTimer();
+    if (!cur.mc) subj[idx] = cur.get();
     if (timeout) {
       res[idx] = false;
       var box = $('qbody').firstChild;
@@ -409,7 +412,7 @@ h1 { margin: 0; font: 800 clamp(54px, 18vw, 96px)/1.05 var(--f-head); letter-spa
     for (var n = 0; n < TOTAL; n++) tk.appendChild(el('i'));
     $('who').textContent = nick;
     $('intro').hidden = true; $('exam').hidden = false;
-    state = 'exam'; res = [];
+    state = 'exam'; res = []; subj = {};
     show(0);
   }
 
@@ -423,6 +426,8 @@ h1 { margin: 0; font: 800 clamp(54px, 18vw, 96px)/1.05 var(--f-head); letter-spa
     $('exam').hidden = true; $('result').hidden = false;
     window.scrollTo(0, 0);
     var info = { nick: nick, score: score, wrong: wrong, violated: violated, when: stampStr() };
+    info.subjective = subjText();
+    report(info);
     renderImage(info).then(function (url) {
       var img = $('rimg');
       img.alt = info.nick + ' 가갸날 시험 결과. 점수 ' + score + '점. ' + (wrong.length ? '오답 문항 ' + wrong.join(', ') + '번.' : '오답 없음.');
@@ -434,6 +439,21 @@ h1 { margin: 0; font: 800 clamp(54px, 18vw, 96px)/1.05 var(--f-head); letter-spa
       [info.nick, score + '점 / ' + (TOTAL * PTS) + '점', '오답 문항: ' + (wrong.length ? wrong.join(', ') : '없음'), info.when].forEach(function (t) { var p = el('p'); p.textContent = t; f.appendChild(p); });
       $('rhint').textContent = '이 화면을 캡처해서 제출해 주세요';
     });
+  }
+
+  function subjText() {
+    return [23, 24, 25].filter(function (n) { return subj[n - 1]; }).map(function (n) {
+      return n + ': ' + subj[n - 1].map(function (x) { return x.trim(); }).join(', ');
+    }).join(' | ');
+  }
+
+  function report(info) {
+    if (!ENDPOINT) return;
+    var body = JSON.stringify({ guild: GUILD, nick: info.nick, score: info.score, wrong: info.wrong, violated: info.violated, subjective: info.subjective });
+    var send = function () {
+      return fetch(ENDPOINT, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: body, keepalive: true });
+    };
+    try { send().catch(function () { setTimeout(function () { try { send().catch(function () {}); } catch (e) {} }, 3000); }); } catch (e) {}
   }
 
   function stampStr() {
